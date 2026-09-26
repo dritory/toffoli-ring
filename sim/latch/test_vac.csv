@@ -1,0 +1,5 @@
+f_hex,g_hex,label,k,qstart,status,period
+7878,ff00,toffoli,2,0,1,1
+7878,ff00,toffoli,2,1,1,1
+7878,ff00,toffoli,3,0,1,1
+7878,ff00,toffoli,3,1,1,1

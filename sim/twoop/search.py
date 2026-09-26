@@ -75,14 +75,22 @@ def search_pair(bundleA, bundleB, g, template, rest, L,
     found = {p: None for p in want}
     identities = []
 
-    # DFS with incremental branch states; state per node = list of
-    # (window, ptr, flag, alive) aligned with `inits`.
+    init_wins = [build_window(g, template, xl, xc, xr) for (xl, xc, xr) in combos]
+
     root_states = []
     for (win, p0, fin, combo) in inits:
-        root_states.append([list(win), p0, fin, True])
+        root_states.append((list(win), p0, fin, True))
 
     def check(word_str, states):
-        # states aligned with inits (same order): pairs of flag_in=0/1 per combo
+        # Each primitive must hold across ALL combos independently; one
+        # primitive failing on some combo must not stop us from recording a
+        # *different* primitive that holds across all combos for this same
+        # word.
+        pending = [p for p in found if found[p] is None]
+        if not pending:
+            return
+        still_ok = {p: True for p in pending}
+
         for idx, (xl, xc, xr) in enumerate(combos):
             s0 = states[2 * idx]      # flag_in = 0
             s1 = states[2 * idx + 1]  # flag_in = 1
@@ -90,13 +98,17 @@ def search_pair(bundleA, bundleB, g, template, rest, L,
             w1, p1f, f1f, ok1 = s1
             if not ok0 or not ok1:
                 return  # shouldn't happen if we only check alive words
-            init_win = build_window(g, template, xl, xc, xr)
+            init_win = init_wins[idx]
             # flag_in = 1 must always be pure identity -- but only when the
             # pair can ever actually produce flag = 1 (see flag_reachable).
+            # This is a blanket requirement independent of which primitive
+            # is being tested, so if it fails, no primitive can match this
+            # word at all.
             if flag_ok and not (w1 == init_win and p1f == ptr0 and f1f == 0):
                 return
-            for prim in list(found.keys()):
-                if found[prim] is not None:
+
+            for prim in pending:
+                if not still_ok[prim]:
                     continue
                 ok = False
                 if prim == "FLIP":
@@ -113,19 +125,22 @@ def search_pair(bundleA, bundleB, g, template, rest, L,
                     want_flag = 1 if xc == 0 else 0
                     ok = (w0 == init_win and p0f == ptr0 and f0f == want_flag)
                 if not ok:
-                    return
-            # if we got here for this combo, all remaining prims still hold;
-            # move to next combo (loop continues)
-        # all combos passed for all remaining prims -> record
-        for prim in found:
-            if found[prim] is None:
+                    still_ok[prim] = False
+            if not any(still_ok.values()):
+                return  # nothing left can match; stop early
+
+        # Record whichever primitives held across every combo. Since we
+        # process words in strict increasing-length (BFS) order below, the
+        # first word recorded for a primitive is guaranteed shortest.
+        for prim in pending:
+            if still_ok[prim] and found[prim] is None:
                 found[prim] = (word_str, len(word_str))
         # identity check (flag_in=0 also pure identity, for every combo)
         is_identity = True
-        for idx, (xl, xc, xr) in enumerate(combos):
+        for idx in range(len(combos)):
             s0 = states[2 * idx]
             w0, p0f, f0f, ok0 = s0
-            init_win = build_window(g, template, xl, xc, xr)
+            init_win = init_wins[idx]
             if not (w0 == init_win and p0f == ptr0 and f0f == 0):
                 is_identity = False
                 break
@@ -149,18 +164,26 @@ def search_pair(bundleA, bundleB, g, template, rest, L,
     def all_alive(states):
         return all(s[3] for s in states)
 
-    def dfs(prefix, states):
-        if not all_alive(states):
-            return
-        if prefix:
-            check(prefix, states)
-        if len(prefix) >= L:
-            return
-        if all(found[p] is not None for p in want) and not collect_identities:
-            return
-        for ch in ("A", "B"):
-            new_states = advance(states, ch)
-            dfs(prefix + ch, new_states)
+    # Level-order (BFS) traversal by word length, so that the first time a
+    # primitive is matched is guaranteed to be at the shortest possible
+    # length (a plain depth-first traversal would visit some length-3 words
+    # before some length-1 words and could record a non-shortest macro).
+    frontier = [("", root_states)]
+    for depth in range(1, L + 1):
+        next_frontier = []
+        need_more = collect_identities or not all(found[p] is not None for p in want)
+        if not need_more:
+            break
+        for prefix, states in frontier:
+            for ch in ("A", "B"):
+                new_states = advance(states, ch)
+                if not all_alive(new_states):
+                    continue  # pruned: this word (and its extensions) is dead
+                word = prefix + ch
+                check(word, new_states)
+                next_frontier.append((word, new_states))
+        frontier = next_frontier
+        if not frontier:
+            break
 
-    dfs("", root_states)
     return found, identities

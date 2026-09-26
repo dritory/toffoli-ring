@@ -80,7 +80,8 @@ int main(int argc, char **argv) {
         long tried2 = 0, tried3 = 0, found_before = 0;
         for (int v = 0; v < NF; v++) if (cost[v] >= 0) found_before++;
 
-        double deadline = (L == 5) ? t0 + time_budget_level5 : 1e18;
+        double level_budget = (L == 4) ? 240.0 : (L == 5) ? time_budget_level5 : 1e18;
+        double deadline = t0 + level_budget;
         int bail = 0;
 
         /* arity 1 */
@@ -100,7 +101,7 @@ int main(int argc, char **argv) {
                 if (cost[nf] < 0) { cost[nf] = (signed char)L; op[nf] = 7; c1[nf] = d; c2[nf] = r; }
                 tried2++;
             }
-            if ((di & 63) == 0 && L == 5 && now() > deadline) { bail = 1; }
+            if ((di & 63) == 0 && now() > deadline) { bail = 1; }
         }
 
         /* arity 3: d (from Delta) NAND r1 NAND r2, r1<r2 both from Rprev, both != d */
@@ -118,7 +119,7 @@ int main(int argc, char **argv) {
                     if (cost[nf] < 0) { cost[nf] = (signed char)L; op[nf] = 8; c1[nf] = d; c2[nf] = r1; c3[nf] = r2; }
                     tried3++;
                 }
-                if ((i1 & 511) == 0 && L == 5 && now() > deadline) { bail = 1; break; }
+                if ((i1 & 511) == 0 && now() > deadline) { bail = 1; break; }
             }
         }
 

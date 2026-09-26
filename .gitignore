@@ -4,3 +4,4 @@ __pycache__/
 *.pyc
 sim/latch/cost
 sim/latch/cost_prov
+sim/latch/dynamics
