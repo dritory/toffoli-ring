@@ -242,11 +242,22 @@ def main():
             lines.append(f"Background (row-invariant, from {rec['source']}-seed, "
                          f"settled in {rec['conv_rows']} rows):\n")
             lines.append("```\n" + "".join("#" if b else "." for b in bg) + "\n```\n")
-            lines.append("Difference pattern (disturbed XOR background), one row per line, "
-                         f"stride chosen so <=120 lines are shown:\n")
-            stride = max(1, (len(rows)) // 120)
+            if c == "dies":
+                death_r = None
+                for r in range(len(rows)):
+                    if all(rows[r][x] == bg[x] for x in range(M)):
+                        death_r = r
+                        break
+                show_rows = list(range(0, min(len(rows), (death_r or 0) + 4)))
+                lines.append(f"Difference pattern (disturbed XOR background), all rows up "
+                             f"to the death row (+3 to confirm it stays dead):\n")
+            else:
+                stride = max(1, (len(rows)) // 120)
+                show_rows = list(range(0, len(rows), stride))
+                lines.append("Difference pattern (disturbed XOR background), one row per "
+                             f"line, stride chosen so <=120 lines are shown:\n")
             diagram = []
-            for r in range(0, len(rows), stride):
+            for r in show_rows:
                 d = [rows[r][x] ^ bg[x] for x in range(M)]
                 diagram.append(f"r={r:4d}: " + "".join("#" if b else "." for b in d))
             lines.append("```\n" + "\n".join(diagram) + "\n```\n")
