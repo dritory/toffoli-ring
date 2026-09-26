@@ -1,0 +1,19 @@
+total configs: 24
+  tried AT BT TT mid=(): found=False visited=3000001 time=35.3s
+  tried AT BT TF mid=(): found=False visited=3000001 time=34.6s
+  tried AT BF TT mid=(): found=False visited=3000001 time=34.9s
+  tried AT BF TF mid=(): found=False visited=3000001 time=35.6s
+  tried AF BT TT mid=(): found=False visited=3000001 time=34.3s
+  tried AF BT TF mid=(): found=False visited=3000001 time=35.5s
+  tried AF BF TT mid=(): found=False visited=3000001 time=35.5s
+  tried AF BF TF mid=(): found=False visited=3000001 time=34.8s
+  tried AT BT mid=(0) TT: found=False visited=3000001 time=37.2s
+  tried AT BT mid=(1) TT: found=False visited=3000001 time=36.6s
+  tried AT BT mid=(0) TF: found=False visited=3000001 time=37.7s
+  tried AT BT mid=(1) TF: found=False visited=3000001 time=38.7s
+  tried AT BF mid=(0) TT: found=False visited=3000001 time=37.3s
+  tried AT BF mid=(1) TT: found=False visited=3000001 time=36.1s
+  tried AT BF mid=(0) TF: found=False visited=3000001 time=35.4s
+  tried AT BF mid=(1) TF: found=False visited=3000001 time=36.5s
+time budget hit, stopping
+elapsed=576.0s found=False

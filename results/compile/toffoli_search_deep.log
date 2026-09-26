@@ -1,0 +1,11 @@
+    ...depth=0 visited=4
+    ...depth=10 visited=100003
+    ...depth=10 visited=100004
+...
+    ...depth=14 visited=11400004
+    ...depth=14 visited=11500000
+    ...depth=14 visited=11500004
+    ...depth=14 visited=11600000
+    ...depth=14 visited=11600001
+    ...depth=14 visited=11600002
+(stopped manually after ~2.5 min wall clock, 10.9M states visited, still within BFS depth 14 of a max_len=30 budget -- inconclusive)
