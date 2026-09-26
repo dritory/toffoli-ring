@@ -223,6 +223,110 @@ def initial_states(pattern, g):
     return states
 
 
+def gen_valuations(n_groups):
+    return list(itertools.product([0, 1], repeat=n_groups))
+
+
+def initial_states_n(pattern, g, n_groups, valuation):
+    tape = []
+    for xv in valuation:
+        tape.extend(materialize(xv, pattern))
+    return tape
+
+
+def decode_n(tape, pattern, g, n_groups):
+    out = []
+    for gi in range(n_groups):
+        seg = tape[gi * g:(gi + 1) * g]
+        d = decode_group(seg, pattern)
+        if d is None:
+            return None
+        out.append(d)
+    return tuple(out)
+
+
+def check_target_n(target, final_states, start_ptr, g, pattern, valuations, n_groups, mid_index):
+    for (tape, ptr), valuation in zip(final_states, valuations):
+        d = decode_n(tape, pattern, g, n_groups)
+        if d is None:
+            return False
+        xm0 = valuation[mid_index]
+        if target == 'FLIP':
+            want = list(valuation)
+            want[mid_index] = 1 - xm0
+            ok = (list(d) == want and ptr == start_ptr)
+        elif target == 'NEXT':
+            ok = (list(d) == list(valuation) and ptr == start_ptr + g)
+        elif target == 'PREV':
+            ok = (list(d) == list(valuation) and ptr == start_ptr - g)
+        elif target == 'CFLIP':
+            want = list(valuation)
+            want[mid_index] = 0
+            ok = (list(d) == want and ptr == start_ptr)
+        elif target == 'CNEXT':
+            want_ptr = start_ptr + g if xm0 == 1 else start_ptr
+            ok = (list(d) == list(valuation) and ptr == want_ptr)
+        elif target == 'CPREV':
+            want_ptr = start_ptr - g if xm0 == 1 else start_ptr
+            ok = (list(d) == list(valuation) and ptr == want_ptr)
+        else:
+            raise ValueError(target)
+        if not ok:
+            return False
+    return True
+
+
+def search_combo_n(pair, pattern, g, rest, n_groups=5, max_len=12, early_stop=True):
+    """
+    Generalized version of search_combo with a configurable window of
+    n_groups groups (must be odd; the pointer starts in the middle group).
+    Used for the widened-window rerun (n_groups=5, i.e. current group +-2).
+    """
+    assert n_groups % 2 == 1
+    mid_index = n_groups // 2
+    A, B = pair
+    start_ptr = mid_index * g + rest
+    window_size = n_groups * g
+    valuations = gen_valuations(n_groups)
+    init_states = [(tuple(initial_states_n(pattern, g, n_groups, val)), start_ptr) for val in valuations]
+
+    found = {t: None for t in TARGETS}
+    visited = {tuple(init_states)}
+    frontier = [("", init_states)]
+
+    for length in range(1, max_len + 1):
+        new_frontier = []
+        for word, states in frontier:
+            for letter, bundle in (('A', A), ('B', B)):
+                new_states = []
+                ok = True
+                for tape, ptr in states:
+                    tape_list = list(tape)
+                    res = apply_letter(bundle, tape_list, ptr)
+                    if res is None:
+                        ok = False
+                        break
+                    new_states.append((tuple(res[0]), res[1]))
+                if not ok:
+                    continue
+                key = tuple(new_states)
+                if key in visited:
+                    continue
+                visited.add(key)
+                new_word = word + letter
+                for t in TARGETS:
+                    if found[t] is None and check_target_n(t, new_states, start_ptr, g, pattern,
+                                                            valuations, n_groups, mid_index):
+                        found[t] = new_word
+                new_frontier.append((new_word, new_states))
+        frontier = new_frontier
+        if not frontier:
+            break
+        if early_stop and all(v is not None for v in found.values()):
+            break
+    return found
+
+
 def search_combo(pair, pattern, g, rest, max_len=12, early_stop=True):
     """
     BFS over words in {A,B}* up to length max_len for one (pair, encoding,
