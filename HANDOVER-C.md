@@ -42,6 +42,10 @@ Useful facts for block design:
 
 The sketch in §2 assumed left-moving data flows freely along copy chains. It does not: a copy site at x reads x+1, and a gate site reads only to its left, so data arriving from the right stops at the first gate site. It continues only if gates to its right pick it up and re-emit it, which sends it rightward. Measured with s = 1 (N = mP − 1): right-movers at about 3.7 sites per row, left-movers only in rare programs at about 0.5 sites per row, no stationary memory, and interactions whose output depends on both inputs (k = 3 only). Universality of the program drum is therefore not established. Follow-up: vary the slide s (N = mP − s, copy sites read x + s) and search for multi-site memory structures.
 
+## 2c. Status after the slide and memory searches (parked)
+
+With N = mP − s for s = 1..P−1 (k = 2, 3, P = 4..12; 54,320 stationary programs; boundary rule verified 5500/5500): fast left-movers (up to 11.5 sites/row) and fast right-movers (up to 18.9 sites/row) exist, but **no program has both**; the sets are disjoint. Frozen localized structures exist (148,386 found). The only "toggles" found are one-directional domain extensions, not a two-state bit that can be set and reset. A construction needs two-way signalling and a resettable memory cell in one program, so universality of the program drum is not established and the search gives no route to it. Parked in favour of the two-instruction machine (HANDOVER-B). A proof that no single program supports both directions would close it; not attempted.
+
 ## 3. Tasks for the cheap models
 
 1. Simulator of the machine exactly as in §0, plus the helix and static-frame forms; check all three agree on random (N, P, k, p, s₀) with N = mP − 1, and that P | N dies (helix-period test from `sim/nand/helix.py`: e_τ = e_{τ−M} for small M after a short transient).
