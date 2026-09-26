@@ -1,0 +1,9 @@
+  ...tried 20 configs so far (n_left=0 left=() right=(1, 1, 1) visited=1984)
+  ...tried 40 configs so far (n_left=3 left=(0, 1, 1) right=() visited=1984)
+  ...tried 60 configs so far (n_left=0 left=() right=(1, 1, 1, 1) visited=12544)
+  ...tried 80 configs so far (n_left=2 left=(0, 0) right=(1, 1) visited=12544)
+  ...tried 100 configs so far (n_left=3 left=(0, 1, 1) right=(1,) visited=12544)
+...
+  ...tried 320 configs so far (n_left=1 left=(0,) right=(1, 0, 0, 1, 1) visited=390379)
+  ...tried 340 configs so far (n_left=1 left=(1,) right=(0, 0, 1, 1, 1) visited=385885)
+time budget hit after 348 configs

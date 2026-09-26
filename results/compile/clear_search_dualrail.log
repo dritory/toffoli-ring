@@ -1,0 +1,4 @@
+FOUND orient=T n_left=0 left=() right=(): len=5 word=FNCPFCP verify=True visited=21
+FOUND orient=T n_left=0 left=() right=(0,): len=5 word=FNCPFCP verify=True visited=62
+FOUND orient=T n_left=0 left=() right=(1,): len=5 word=FNCPFCP verify=True visited=61
+... (many more equivalent FOUND lines for other marker placements/values, all len=5, word=FNCPFCP) ...

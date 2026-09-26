@@ -2,17 +2,23 @@
 
 Code: `sim/compile/`. Raw search logs: `results/compile/*.log`.
 
-Status up front, so the obstruction is not buried: levels 0 and 1 (the
-hardware and the reference machine R) are fully re-verified, the R-level
-sub-macro toolkit includes a **found and verified CNOT gadget** but **no
-Toffoli-class (state-AND-symbol) gadget** was found within the search
-budget available in this session. That gate is exactly the one piece the
-generic TM-step construction needs, so the compiler is specified completely
-but not executed end-to-end for the three test machines at the R/level-0
-tiers. All three test machines *are* fully implemented and verified as
-direct Turing machines (`sim/compile/tm.py`, `verify_tms.py`). See "Where
-this stands" at the end for the precise scope of what is and is not
-verified.
+Status up front: levels 0 and 1 (the hardware and the reference machine R)
+are fully re-verified. All **three** named R-level gates the TM-step
+construction needs are now found and independently re-verified from
+scratch: **CNOT** (§3a, found by this session's own BFS), **TOFFOLI** (§3b,
+supplied by the orchestrator after this session's own search did not
+converge, re-verified here on all 512 valuations of its window), and
+**CLEAR** (§3c, found by this session's own BFS after switching `c` to dual
+rail, mirroring what made CNOT work). The group layout and per-cell
+dispatch built from these three gates is fully specified (§4), but wiring
+them into a complete per-machine program hit one further, genuinely open
+engineering obstruction — **broadcasting the symbol bit to every state's
+test window without a "long-jump" copy gate**, which this session's search
+did not resolve (§4b) — so the R-level and level-0 programs for the three
+test machines were **not** produced or run this session. All three test
+machines *are* fully implemented and verified as direct Turing machines
+(`sim/compile/tm.py`, `verify_tms.py`), independent of that outcome. See §7
+("Where this stands") for the precise scope of what is and is not verified.
 
 ## 1. Level 0 (re-verified)
 
@@ -110,140 +116,189 @@ Independently re-verified on all 4 valuations of `(A, T)`: `A` unchanged,
 `T` flipped iff `A=1`, pointer lands at offset +2 (on `t`) in every case.
 Reproduce: `python3 sim/compile/find_cnot.py`.
 
-### 3b. TOFFOLI / the state-AND-symbol gate — not found (open obstruction)
+### 3b. TOFFOLI / the state-AND-symbol gate — found
 
 The TM-step construction (§4) needs one more gate: flip `T` iff
 `A == 1 AND B == 1`, leaving `A, B` unchanged. This is the gate a per-rule
 dispatch actually needs (state-bit AND symbol-bit -> conditional write),
 and unlike CNOT it is **not linear** in the (A, B) pair, so composing two
-verified CNOTs cannot build it — the R primitives' own nonlinearity (the
-conditional move) has to supply it directly, the same way it supplied
-CNOT's.
+verified CNOTs cannot build it.
 
-Three searches were run, all negative within their bounds:
+This session's own search did not converge (see the negative results at
+the end of this subsection, kept for the record). The orchestrator then
+supplied a working construction, which is **independently re-verified from
+scratch here** (`sim/compile/gates.py`, `verify_toffoli()`), not merely
+taken on faith:
+
+Layout relative to the pointer at `a` (offset 0): `0:a, 1:b`, `2,3`:
+untouched spares, `4:g0` (scratch), `5:t`, `6:g1` (scratch), `7:t̄` (`t`'s
+dual-rail partner, 2 apart), `8,9`: untouched spares, `10,11,12`: constant
+markers `0,1,1`. Using `C`=`CN`, `D`=`CP` for readability:
+
+```
+TOFF = CCNNNNFNFNNNNNDDPPPPPPPPPP  CNNNNFNFNNNNNDDPPPPPPPPPP     (51 letters, window 13)
+```
+
+Mechanism (as explained by the orchestrator, confirmed by re-simulating it):
+`CC` from `a` leaves the pointer at offset `o = a + a·b`; `FNF` at `4+o`
+flips cells `4+o` and `5+o`, which puts `¬a` on `g0`, `1+a·b` on `t` (i.e.
+`t` flips iff `a·b=1`), `a` on `g1`, `a·b` on `t̄` (the dual-rail partner
+flips the same way); the marker triple `(0,1,1)` together with `DD` merges
+the three branches (`a=0`, `a=1,b=0`, `a=1,b=1`) back to a single pointer
+offset; the second core (`C` instead of `CC`, so `o=a`) is the exact mirror
+that cancels the `¬a` written to `g0`, the `a` written to `g1`, and the
+constant on the marker, without touching `t/t̄` again.
+
+Re-verified independently in this session (`gates.py`): **512/512**
+valuations of `(a, b, spare1, spare2, g0, t, g1, spare3, spare4)` — i.e.
+`g0`, `g1` and every spare cell may start at *any* value, not just 0 —
+end with `a, b` and every spare/scratch cell unchanged, `t` and `t̄` flipped
+together iff `a·b=1`, pointer back at `a`. (`python3 sim/compile/gates.py`.)
+
+**This session's own Toffoli search, for the record (superseded by the
+above, kept because it is a real negative result within its bounds):**
+three searches were run, all inconclusive or narrowly negative:
 
 1. **Broad, shallow** (`results/compile/toffoli_search_broad.log`): 24
    configurations (dual rail on `A,B,T`, 0–1 constant spacer, both
    orientations), word length ≤ 24, capped at 3,000,000 visited joint
    states each. Every configuration **hit the visited-state cap** without
-   reaching the goal — i.e. inconclusive (the search was truncated, not
-   exhausted).
+   reaching the goal — inconclusive (truncated, not exhausted).
 2. **Deep, single configuration** (`results/compile/toffoli_search_deep.log`):
    dual rail on `A,B,T`, no spacer (6-bit window, 8 valuations), word
    length ≤ 30, cap 40,000,000. Stopped manually after ~2.5 minutes and
    10.9 million visited states, still within BFS depth 14 — also
-   inconclusive, and a strong sign that this window's *reachable* state
-   graph is orders of magnitude larger than CNOT's (which needed only
-   37,765 states total), making plain BFS impractical here within a
-   two-CPU, few-GB budget.
+   inconclusive; a sign that this window's reachable state graph is orders
+   of magnitude larger than CNOT's (37,765 states total). The
+   orchestrator's actual solution needed a *13-bit* window (more than
+   double what was tried) and 51 letters (versus the ≤30 this session
+   searched) — consistent with the state space simply being too large for
+   plain BFS at the window sizes this session's compute budget could
+   afford.
 3. **Small reproducible bound** (`sim/compile/find_toffoli_attempt.py`,
-   runs in seconds): the **single-rail, no-spacer** 3-bit window (`A,B,T`
-   as plain bits, no dual rail, no padding) BFS **fully closes** its
-   reachable space (18,458 states) with no hit at *any* length — a genuine
-   (if narrow) impossibility result, unlike the two inconclusive dual-rail
-   runs above.
+   runs in seconds): the single-rail, no-spacer 3-bit window BFS fully
+   closes its reachable space (18,458 states) with no hit at any length —
+   a genuine (if narrow) impossibility result for that exact small window.
 
-No conservation-law proof of impossibility was found either (the obvious
-candidate — every letter-word has a fixed, data-independent count of `F`
-operations, hence a fixed parity of total window popcount change across all
-branches — is satisfied by the required output here, since Toffoli's
-output popcount change is 0 or 2, always even, same as CNOT's; it does not
-rule the gate out). The honest state is: **found for a linear (single
-control) gate, not found for the genuinely nonlinear (two-control) gate,
-within the compute budget available**; a larger window/length search, a
-bidirectional (meet-in-the-middle) BFS, or a hand construction refined from
-the partial analysis below are the natural next steps.
+### 3c. CLEAR(c) — found
 
-**Partial hand analysis, for whoever picks this up next.** Two plain `CN`
-tests on adjacent bits `A, B` (no markers) send the joint state to one of
-three *distinct* pointer offsets depending on `(A,B)`: offset 0 (on `A`,
-reading its own true value 0) when `A=0`; offset 1 (on `B`, reading 0) when
-`(A,B)=(1,0)`; offset 2 (on a fresh ancilla `M`, reading `M`'s own value)
-when `(A,B)=(1,1)` — i.e. the *position* already encodes the AND correctly,
-and all three landing cells read the same value (0, if `M` starts at 0).
-The obstruction is committing this into a permanent bit: an unconditional
-`F` at that point flips whichever cell the pointer is on, which is `M` in
-the true case (correct) but is `A` or `B` in the two false cases
-(corrupts the control that must survive unchanged for the rest of the
-per-cell decode). Every cleanup attempted by hand (mirrored `CP`/`CN`
-passes exploiting that the corrupted cell now reads 1) fixes the pointer's
-*position* but not both corrupted values at once without re-introducing the
-same asymmetry one bit further out — consistent with why CNOT needed dual
-rail (an extra "shadow" bit to absorb exactly this kind of asymmetry) and
-suggesting Toffoli needs at least one more scratch/marker bit than the
-6-bit dual-rail window already tried, hence a wider search.
+The remaining named primitive: set `c` to 0 regardless of its incoming
+value, pointer returned, needed to erase the old one-hot state bit during
+an irreversible TM step (per the orchestrator: this cannot be done by
+branch-then-unconditional-flips alone — equal final tapes in both branches
+would need `(1+x)S(x) = x^c` for a finite flip set `S`, which has no
+solution; it needs a second data-dependent move after the first flip).
 
-## 4. The TM-step construction (specified, not executed past this gate)
-
-**Group layout.** Each TM cell is a group of `W = 2 + |Q|` logical bits:
+This session's own BFS (`find_clear.py`, log excerpt
+`results/compile/clear_search_singlerail.log`) first tried `c` as a
+**plain** (single-rail) bit plus 2–6 constant marker cells, in every
+placement and value combination, up to word length 24: **348 of ~492
+configurations were tried before a time budget cut the run off, all
+exhausted with no hit** (visited counts stayed in the
+tens-to-hundreds-of-thousands, well under the 2,000,000 cap, for every
+completed configuration — genuine, if not fully exhaustive, negative
+evidence). Following the same pattern as CNOT (§3a), switching `c` to
+**dual rail** (`c, c̄`) resolved it immediately
+(`find_clear_dual.py`, log excerpt
+`results/compile/clear_search_dualrail.log`), with **no extra marker cells
+needed at all**:
 
 ```
-[ s, s̄,  q_0, q_1, ..., q_{|Q|-1} ]
+CLEAR(c) = F N CP F CP        (5 letters, window 2, 21 states visited)
 ```
 
-- `s, s̄`: the cell's symbol, dual rail (matches the level-0/level-1
-  encoding pattern throughout, and is what made CNOT work in §3a).
-- `q_0..q_{|Q|-1}`: one-hot current-state indicator. Invariant, maintained
-  by construction and checkable on every configuration: **at most one cell
-  on the whole tape has any `q_k = 1`** (the head cell), and there it is
-  exactly one `q_k` (the current state); every other cell has all `q_k = 0`.
+Independently re-verified (`sim/compile/gates.py`, `verify_clear()`, and by
+hand): both valuations of `c` end with `(c, c̄) = (0, 1)`, pointer back at
+`c`. Reproduce: `python3 sim/compile/find_clear_dual.py`.
 
-The physical (level-0) tape is the concatenation of `N` such groups (`N`
-= number of TM cells in use) around the cyclic tape, each of physical width
-`2W` after level-0's own `(x, x̄)` doubling — i.e. `2W` level-0 cells per TM
-cell, `2WN` level-0 cells in total.
+## 4. The TM-step construction
 
-**Dispatch (verified independently of the missing gate).** Scanning the
-one-hot state block with the letter sequence `(CN N)` repeated `|Q|` times
-starting at `q_0` lands the pointer at a *constant*, data-independent final
-offset (`|Q|+1` past `q_0`) regardless of which `q_k` is the active one —
-because `CN` fires exactly once (at the true `k`) contributing an extra +1,
-and every other iteration contributes exactly +1 whether or not it fires
-(reading 0 either side of the true bit, by the one-hot invariant). This is
-a simple, hand-checked fact (confirmed computationally for `|Q|` up to 8 in
-the course of this work), independent of the missing gate, and is *most* of
-what "find out which state we are in" needs. What is still missing is
-hooking a **per-(state, symbol) action** onto the exact tick `CN` fires —
-that hook is exactly the Toffoli-class gate of §3b (fire the action iff
-*this* `q_k` is 1 **and** the symbol bit matches this rule).
+### 4a. Group layout
 
-**Given a working gate `TAND(A,B->T)` of length `g` letters over a window
-of `w` extra logical bits**, one full TM step compiles to, for every
-`(state k, symbol value v)` pair with a transition rule `(new_sym, dir,
-new_state)`:
-
-1. `TAND(q_k, s==v -> "fire_k_v")` — a per-rule scratch bit, 0 unless this
-   is the active rule.
-2. Gated on `fire_k_v`: `CNOT` the new symbol into `s` if `new_sym != v`
-   (else nothing); `CNOT` a "moving" marker; carry `new_state`'s one-hot
-   bit into the neighbor group `dir` cells away (a chain of `CNOT`s from
-   `fire_k_v` into that neighbor's `q_{new_state}`, and one clearing `q_k`
-   in the old head), using the already-correct `NEXT`/`PREV` (`N`/`P`
-   chains, or the level-1 `CN`/`CP` conditional-move macros for the actual
-   pointer relocation) to reach the neighbor group.
-3. Clear the scratch `fire_k_v` back to 0 (it is only ever 1 transiently,
-   so this is an unconditional `F` gated the same way it was set, or a
-   second `TAND` application, whichever the concrete `TAND` construction
-   makes cheaper).
-
-Concatenating this block for every `(k, v)` pair (there are `2|Q|` of them)
-gives the whole pass; nothing else in the program depends on the tape
-beyond the head's group and its two neighbors, so **program length is a
-function of `|Q|` alone**, independent of `N` (the number of TM cells) —
-the required property. Symbolically, with `TAND` costing `g` letters and
-window `w`, and each rule's write/carry/clear costing a small constant
-`c` (dominated by up to `W`-many `CNOT`s at 12 letters each, plus O(`W`)
-`N`/`P` housekeeping):
+Each TM cell is a group of logical bits:
 
 ```
-L(|Q|) ≈ 2|Q| · (g + c),   c = O(W) = O(|Q|)
+[ s, s̄,  block_0, block_1, ..., block_{|Q|-1} ]
 ```
 
-i.e. **O(|Q|²)** letters in R, and (since every R letter is a level-0 macro
-of length 2–12) **O(|Q|²)** level-0 ticks per TM step — constant in the
-tape size `N`, which is exactly the claim the task asks to prove by
-construction. This is as far as the construction is specified without a
-concrete `g`.
+- `s, s̄`: the cell's symbol, dual rail.
+- `block_k` (13 logical bits): the *test window for state k*, laid out
+  exactly as TOFFOLI's window (§3b) with `A := sc_k` (a local, reusable
+  copy of the symbol, initialized fresh each pass), `B := q_k` (this
+  state's one-hot bit), and `q̄_k` sitting in TOFF's own "untouched spare"
+  slot 2 (proven safe by the 512/512 check in §3b) — free real estate,
+  since `q_k` needs a `q̄_k` neighbor for CLEAR later but TOFF never reads
+  slot 2. Slots 4–12 are TOFF's own `g0, t(=fire_k), g1, t̄(=f̄ire_k), spares,
+  const(0,1,1)`.
+
+One-hot invariant, maintained by construction: at any rest point between
+passes, at most one cell (the head) has any `q_k = 1`, and there exactly
+one; every other cell has all `q_k = 0`.
+
+### 4b. Per-cell dispatch, as far as this session got
+
+For each state `k`, both of its rules (`k,0` and `k,1`) share `block_k`:
+run TOFF with `A=sc_k, B=q_k` for the `v=1` rule (`sc_k` set to a copy of
+`s`); then `F` on `sc_k` alone (TOFF proved `A` unchanged, so flipping it
+turns "copy of `s`" into "copy of `s̄`" in place); run TOFF again for the
+`v=0` rule, reusing the same `fire`/`g0`/`g1` scratch (cleared with
+CLEAR between the two). Gated on `fire_k_v`: `CNOT` the new symbol into
+`s` iff `new_sym != v`; carry `new_state`'s bit to the neighbor cell
+`dir` away; then unconditionally `CLEAR(q_k)` once (safe regardless of
+whether either rule fired — clearing an already-0 bit is a no-op) and
+`CLEAR(fire)`.
+
+**Open engineering step, not resolved this session: broadcasting `s` into
+every block's `sc_k`.** `sc_k` must start each pass equal to `s`, but `s`
+lives once, at the group's start, while there are `|Q|` `block_k`'s at
+increasing distance from it — a fan-out CNOT can only be found for a
+*fixed* small window, and the verified CNOT (§3a) is exactly 4 bits wide
+with nothing in between. Two ways to try to bridge this were explored:
+
+1. **Chain-copy** `s -> sc_0 -> sc_1 -> ... -> sc_{|Q|-1}` using CNOT
+   `|Q|` times in a row (each verified CNOT invocation ends with the
+   pointer sitting on its own `t`, ready to serve as the next `a` —
+   confirmed by re-tracing the gate, so the *chaining itself* needs no new
+   search). This conflicts with `block_k`'s own layout: CNOT's window
+   requires offset+1 from `sc_k` to be `sc_k`'s own dual-rail partner
+   `s̄c_k` (read and flipped by the gate's own mechanism), but `block_k`
+   needs offset+1 from `sc_k` to be `q_k` (TOFF's `B`) — the two
+   requirements collide on the same physical slot, and using `q_k` in
+   place of `s̄c_k` is not sound (CNOT's own word reads and flips that
+   slot as part of its mechanism, so it would corrupt `q_k`, and CNOT was
+   only verified assuming that slot truly holds `1 - a`).
+2. **A "gap" CNOT** — flip `T` iff `A=1`, with 1–4 untouched spare cells
+   between `(A,Ā)` and `(T,T̄)` so the copy can jump over a `block_k` — was
+   searched for (`find_cnot_gap.py`) at gaps 1–4, word length ≤ 18, capped
+   at 800,000 visited states per gap: **all four hit the cap without a
+   hit** — inconclusive (not exhausted), same shape of result as the
+   original Toffoli search in §3b before the orchestrator's construction
+   resolved it, i.e. plausibly just a larger/longer search than this
+   session's remaining budget could run.
+
+Either a longer/wider "gap CNOT" search, or a layout that avoids fan-out
+entirely (e.g. carrying the comparison through pointer *movement* itself,
+the way CNOT/TOFF/CLEAR all encode their conditionals as movement rather
+than data-copying, instead of literally copying `s`), is the natural next
+step. This is reported honestly as **not completed**, rather than papered
+over with an untested construction.
+
+### 4c. Program length, symbolically
+
+Modulo the broadcast step above, one full TM step is, for every `(k, v)`
+pair (`2|Q|` of them): one TOFF (51 letters) + a constant number of CNOTs
+(12 letters each, `O(1)` per rule for the symbol write, `O(W)` for the
+state-bit carry to the neighbor cell, `W` the group width) + two CLEARs (5
+letters each) + the (not yet resolved) broadcast cost `b(|Q|)` per state.
+Since `W = O(|Q|)` (`13|Q| + 2` logical bits per cell from §4a):
+
+```
+L(|Q|) = 2|Q| · (51 + O(|Q|) + 10) + |Q| · b(|Q|)  =  O(|Q|²) + |Q|·b(|Q|)
+```
+
+independent of `N` (the number of TM cells) either way — program length is
+a function of the TM alone, the required property — with the exact
+constant pending `b(|Q|)`, the resolved broadcast cost.
 
 ## 5. The three test machines (direct TM level: fully verified)
 
@@ -289,34 +344,44 @@ ones, matching the known BB(2,2) result.
 
 ## 6. Ticks per TM step
 
-Not measured end-to-end (the R/level-0 compilation of §4 was not executed,
-per the open gate in §3b). What *is* measured: every level-0 macro used
-anywhere in this design costs 2–12 ticks (§1 table), and level 1's own
-letters are used `O(|Q|²)` times per TM step (§4), so **ticks per TM step
-is O(|Q|²) and independent of tape length `N`** — the qualitative claim the
-task asks for — but no concrete tick count is reported for the three test
-machines because the compiler was not run.
+Not measured end-to-end (the wiring in §4b was not finished, so no R
+program was actually run for any of the three test machines). What *is*
+established: every level-0 macro used anywhere in this design costs 2–12
+ticks (§1 table); every R-level gate used costs 5–51 letters (§3a-c); and
+by §4c's count, `O(|Q|)` gate invocations are needed per TM step. So
+**ticks per TM step is O(|Q|²) (times the unresolved broadcast cost) and
+independent of tape length `N`** — the qualitative claim the task asks
+for — but no concrete tick count is reported for the three test machines
+because the compiler was not run on them.
 
 ## 7. Where this stands (honest summary)
 
-Fully done and verified, independent of the open gate:
+Fully done and verified:
 - Level 0 (hardware) re-verified from the task's own description (§1).
 - Level 1 (R) simulator + exact level-0 correspondence, letter by letter,
   not just at word boundaries (§2).
 - A general BFS gadget-search framework (§3), applicable to any small
-  window/valuation gate, with a clean, independently-verified **CNOT**
-  gadget found by it (12 letters, 4-bit dual-rail window).
-- The full group layout, one-hot dispatch argument, and program-length
-  formula for the general TM compiler (§4), modulo one named gate.
+  window/valuation gate.
+- **All three named gates the construction needs, found and independently
+  re-verified**: CNOT (12 letters, 4-bit window), TOFFOLI (51 letters,
+  13-bit window, construction supplied by the orchestrator after this
+  session's own search stalled, re-verified from scratch here), CLEAR
+  (5 letters, 2-bit window) (§3a-c).
+- The full group layout and per-cell dispatch structure built from these
+  three gates (§4a-b), and the resulting program-length bound (§4c).
 - All three required test machines, fully defined and verified as direct
   Turing machines, including the counter's ripple-carry correctness against
   an independent reference and the busy beaver's halting-by-state-slots
   behavior (§5).
 
-Not done: the Toffoli-class (state-AND-symbol) gate search did not
-converge (§3b) within this session's time/memory budget, so the R-level
-and level-0 programs for the three test machines were not produced or
-run, and no ticks-per-TM-step number was measured. This is reported as the
-obstruction, per the task's own fallback allowance, rather than papered
-over; §3b's partial analysis and the three logged search runs are meant to
-let the next attempt start well past where this one had to stop.
+Not done: broadcasting the symbol bit `s` out to every state's local test
+copy `sc_k` without either corrupting that state's own one-hot bit or
+requiring a "long-jump" CNOT this session could not find within its search
+budget (§4b) — so no R-level or level-0 program was assembled or run for
+any of the three test machines, and no concrete tick count was measured.
+This is reported as the (now much narrower) obstruction, per the task's own
+fallback allowance, rather than papered over: three sessions of gate search
+(this one's CNOT and CLEAR, the orchestrator's TOFFOLI) all needed either
+dual rail or a wide, carefully-marked window to succeed where a naive
+attempt failed, and the broadcast step looks like it needs the same kind of
+treatment, just not yet found.

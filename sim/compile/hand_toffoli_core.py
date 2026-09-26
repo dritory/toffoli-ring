@@ -22,15 +22,3 @@ for a, b, t, s2, s3, s8, s9 in itertools.product((0,1), repeat=7):
     else: bad += 1; print("FAIL", tape, out, p)
 print("core:", ok, "ok,", bad, "bad; word length", len(core))
 print("core word:", core)
-
-# Garbage-free Toffoli: core with CC, then the same core with a single C (cancels ¬a, a, and the constant flip).
-if __name__ == "__main__":
-    core2 = "C" + "N"*K + "FNF" + "N"*M + "DD" + "P"*R
-    TOFF = core + core2
-    good = 0
-    for a, b, t, s2, s3, s8, s9 in itertools.product((0,1), repeat=7):
-        tape = [a, b, s2, s3, 0, t, 0, 1-t, s8, s9, 0, 1, 1]
-        out, p = run(TOFF, tape)
-        exp = list(tape); exp[5] ^= a & b; exp[7] ^= a & b
-        good += (out == exp and p == 0)
-    print("TOFFOLI:", good, "of 128; length", len(TOFF), TOFF)
