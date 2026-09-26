@@ -1,0 +1,13 @@
+=== Subclass A: 1 capacitor (S only), budget = extra components ===
+budget=1: tried 96 candidates, winners=0
+budget=2: tried 9312 candidates, winners=0
+budget=3: tried 893952 candidates, winners=0
+
+=== Subclass B: 2 capacitors (S, M), budget = transistor count ===
+budget=1: tried 40 candidates, winners=0
+budget=2: tried 1600 candidates, winners=8
+    (('phi1', 'DNODE', 'M'), ('phi2', 'M', 'S'))
+    (('phi1', 'DNODE', 'M'), ('phi2', 'S', 'M'))
+    (('phi1', 'M', 'DNODE'), ('phi2', 'M', 'S'))
+    (('phi1', 'M', 'DNODE'), ('phi2', 'S', 'M'))
+    (('phi2', 'M', 'S'), ('phi1', 'DNODE', 'M'))

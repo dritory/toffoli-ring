@@ -1,0 +1,4 @@
+{'label': 'BB(2,2)', 'visits': 36, 'ticks': 1505736, 'halted': True, 'G': 105, 'l0_len': 41826} 0s
+{'label': 'counter L=3', 'visits': 450, 'ticks': 33682500, 'halted': False, 'G': 136, 'l0_len': 74850} 2s
+trials=500 fails=0
+PASS: Machine A11 circuit (two-phase, no-buffer master-slave) matches run_l0 tick-by-tick
