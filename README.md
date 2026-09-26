@@ -3,6 +3,9 @@
 Is the sequential Toffoli ring `s[i+k] ^= s[i] & s[i+1]` (i = 0..N-1, sequential, cyclic) computationally universal?
 
 * `REPORT.md` — verdicts per k, theorems, empirical results, what a proof would need, and the "smallest change" discussion.
+* `PLAN.md` — NAND ring: dead in every one-NAND tap geometry; the three-input fix and its sweep tasks.
+* `HANDOVER-A.md` — drum with one bit of head state.
+* `HANDOVER-B.md` — two-instruction pointer machines.
 * `sim/` — simulator (`ring.py`), exact cycle enumerator (`cycles.c`), sampled periods (`sample.c`), word catalogs, background search, seed patterns.
 * `results/` — raw sweep output, word classifications, `seeds.md` (spacetime diagrams of every structure mentioned).
 
