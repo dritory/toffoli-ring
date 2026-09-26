@@ -1024,3 +1024,203 @@ pair_idx,bundleA,bundleB,encoding,g,rest,search_L,FLIP,NEXT,PREV,CFLIP,CNEXT,CPR
 22,(move+1),"(flip,move-1(iff=0),skip(v=1))","p3('x', 1, 1)",3,2,10,none<=10,AAA(3),none<=10,none<=10,none<=10,none<=10
 22,(move+1),"(flip,move-1(iff=0),skip(v=1))","p3(1, 'x', 1)",3,0,10,none<=10,AAA(3),none<=10,none<=10,none<=10,none<=10
 22,(move+1),"(flip,move-1(iff=0),skip(v=1))","p3(1, 'x', 1)",3,1,10,none<=10,AAA(3),none<=10,none<=10,none<=10,none<=10
+22,(move+1),"(flip,move-1(iff=0),skip(v=1))","p3(1, 'x', 1)",3,2,10,none<=10,AAA(3),none<=10,none<=10,none<=10,none<=10
+22,(move+1),"(flip,move-1(iff=0),skip(v=1))","p3(1, 1, 'x')",3,0,10,none<=10,AAA(3),none<=10,none<=10,none<=10,none<=10
+22,(move+1),"(flip,move-1(iff=0),skip(v=1))","p3(1, 1, 'x')",3,1,10,none<=10,AAA(3),none<=10,none<=10,none<=10,none<=10
+22,(move+1),"(flip,move-1(iff=0),skip(v=1))","p3(1, 1, 'x')",3,2,10,none<=10,AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)",none,1,0,10,none<=10,A(1),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","(x,xbar)",2,0,10,none<=10,AA(2),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","(x,xbar)",2,1,10,none<=10,AA(2),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","(xbar,x)",2,0,10,none<=10,AA(2),none<=10,ABAB(4),none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","(xbar,x)",2,1,10,none<=10,AA(2),none<=10,BABA(4),none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","(x,1)",2,0,10,none<=10,AA(2),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","(x,1)",2,1,10,none<=10,AA(2),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","(1,x)",2,0,10,none<=10,AA(2),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","(1,x)",2,1,10,none<=10,AA(2),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","(x,0)",2,0,10,AB(2),AA(2),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","(x,0)",2,1,10,BA(2),AA(2),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","(0,x)",2,0,10,none<=10,AA(2),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","(0,x)",2,1,10,AB(2),AA(2),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3('x', 0, 1)",3,0,10,AB(2),AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3('x', 0, 1)",3,1,10,BA(2),AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3('x', 0, 1)",3,2,10,none<=10,AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3(1, 'x', 0)",3,0,10,none<=10,AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3(1, 'x', 0)",3,1,10,AB(2),AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3(1, 'x', 0)",3,2,10,BA(2),AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3(0, 1, 'x')",3,0,10,none<=10,AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3(0, 1, 'x')",3,1,10,none<=10,AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3(0, 1, 'x')",3,2,10,AB(2),AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3('x', 1, 0)",3,0,10,none<=10,AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3('x', 1, 0)",3,1,10,ABBAAB(6),AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3('x', 1, 0)",3,2,10,BBAABA(6),AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3(0, 'x', 1)",3,0,10,none<=10,AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3(0, 'x', 1)",3,1,10,none<=10,AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3(0, 'x', 1)",3,2,10,ABBAAB(6),AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3(1, 0, 'x')",3,0,10,none<=10,AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3(1, 0, 'x')",3,1,10,none<=10,AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3(1, 0, 'x')",3,2,10,none<=10,AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3('x', 0, 0)",3,0,10,AB(2),AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3('x', 0, 0)",3,1,10,BA(2),AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3('x', 0, 0)",3,2,10,BABBAA(6),AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3(0, 'x', 0)",3,0,10,none<=10,AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3(0, 'x', 0)",3,1,10,AB(2),AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3(0, 'x', 0)",3,2,10,BA(2),AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3(0, 0, 'x')",3,0,10,none<=10,AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3(0, 0, 'x')",3,1,10,none<=10,AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3(0, 0, 'x')",3,2,10,AB(2),AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3('x', 1, 1)",3,0,10,none<=10,AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3('x', 1, 1)",3,1,10,none<=10,AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3('x', 1, 1)",3,2,10,none<=10,AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3(1, 'x', 1)",3,0,10,none<=10,AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3(1, 'x', 1)",3,1,10,none<=10,AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3(1, 'x', 1)",3,2,10,none<=10,AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3(1, 1, 'x')",3,0,10,none<=10,AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3(1, 1, 'x')",3,1,10,none<=10,AAA(3),none<=10,none<=10,none<=10,none<=10
+23,(move+1),"(skip(v=1),move-1(iff=0),flip)","p3(1, 1, 'x')",3,2,10,none<=10,AAA(3),none<=10,none<=10,none<=10,none<=10
+8,(move+1),"(move-1,flip)",none,1,0,12,AB(2),A(1),BAB(3),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","(x,xbar)",2,0,12,AABB(4),AA(2),BABBAB(6),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","(x,xbar)",2,1,12,ABBA(4),AA(2),BABBAB(6),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","(xbar,x)",2,0,12,AABB(4),AA(2),BABBAB(6),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","(xbar,x)",2,1,12,ABBA(4),AA(2),BABBAB(6),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","(x,1)",2,0,12,AB(2),AA(2),BABBAB(6),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","(x,1)",2,1,12,BA(2),AA(2),BABBAB(6),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","(1,x)",2,0,12,AABBAB(6),AA(2),BABBAB(6),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","(1,x)",2,1,12,AB(2),AA(2),BABBAB(6),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","(x,0)",2,0,12,AB(2),AA(2),BABBAB(6),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","(x,0)",2,1,12,BA(2),AA(2),BABBAB(6),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","(0,x)",2,0,12,AABBAB(6),AA(2),BABBAB(6),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","(0,x)",2,1,12,AB(2),AA(2),BABBAB(6),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3('x', 0, 1)",3,0,12,AB(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3('x', 0, 1)",3,1,12,BA(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3('x', 0, 1)",3,2,12,BABBAA(6),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3(1, 'x', 0)",3,0,12,AABBAB(6),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3(1, 'x', 0)",3,1,12,AB(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3(1, 'x', 0)",3,2,12,BA(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3(0, 1, 'x')",3,0,12,AAABBABBAB(10),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3(0, 1, 'x')",3,1,12,AABBAB(6),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3(0, 1, 'x')",3,2,12,AB(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3('x', 1, 0)",3,0,12,AB(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3('x', 1, 0)",3,1,12,BA(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3('x', 1, 0)",3,2,12,BABBAA(6),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3(0, 'x', 1)",3,0,12,AABBAB(6),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3(0, 'x', 1)",3,1,12,AB(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3(0, 'x', 1)",3,2,12,BA(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3(1, 0, 'x')",3,0,12,AAABBABBAB(10),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3(1, 0, 'x')",3,1,12,AABBAB(6),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3(1, 0, 'x')",3,2,12,AB(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3('x', 0, 0)",3,0,12,AB(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3('x', 0, 0)",3,1,12,BA(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3('x', 0, 0)",3,2,12,BABBAA(6),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3(0, 'x', 0)",3,0,12,AABBAB(6),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3(0, 'x', 0)",3,1,12,AB(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3(0, 'x', 0)",3,2,12,BA(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3(0, 0, 'x')",3,0,12,AAABBABBAB(10),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3(0, 0, 'x')",3,1,12,AABBAB(6),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3(0, 0, 'x')",3,2,12,AB(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3('x', 1, 1)",3,0,12,AB(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3('x', 1, 1)",3,1,12,BA(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3('x', 1, 1)",3,2,12,BABBAA(6),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3(1, 'x', 1)",3,0,12,AABBAB(6),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3(1, 'x', 1)",3,1,12,AB(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3(1, 'x', 1)",3,2,12,BA(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3(1, 1, 'x')",3,0,12,AAABBABBAB(10),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3(1, 1, 'x')",3,1,12,AABBAB(6),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+8,(move+1),"(move-1,flip)","p3(1, 1, 'x')",3,2,12,AB(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)",none,1,0,12,BA(2),A(1),BAB(3),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","(x,xbar)",2,0,12,ABBA(4),AA(2),BABBAB(6),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","(x,xbar)",2,1,12,BBAA(4),AA(2),BABBAB(6),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","(xbar,x)",2,0,12,ABBA(4),AA(2),BABBAB(6),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","(xbar,x)",2,1,12,BBAA(4),AA(2),BABBAB(6),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","(x,1)",2,0,12,BA(2),AA(2),BABBAB(6),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","(x,1)",2,1,12,BABBAA(6),AA(2),BABBAB(6),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","(1,x)",2,0,12,AB(2),AA(2),BABBAB(6),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","(1,x)",2,1,12,BA(2),AA(2),BABBAB(6),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","(x,0)",2,0,12,BA(2),AA(2),BABBAB(6),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","(x,0)",2,1,12,BABBAA(6),AA(2),BABBAB(6),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","(0,x)",2,0,12,AB(2),AA(2),BABBAB(6),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","(0,x)",2,1,12,BA(2),AA(2),BABBAB(6),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3('x', 0, 1)",3,0,12,BA(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3('x', 0, 1)",3,1,12,BABBAA(6),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3('x', 0, 1)",3,2,12,BABBABBAAA(10),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3(1, 'x', 0)",3,0,12,AB(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3(1, 'x', 0)",3,1,12,BA(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3(1, 'x', 0)",3,2,12,BABBAA(6),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3(0, 1, 'x')",3,0,12,AABBAB(6),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3(0, 1, 'x')",3,1,12,AB(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3(0, 1, 'x')",3,2,12,BA(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3('x', 1, 0)",3,0,12,BA(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3('x', 1, 0)",3,1,12,BABBAA(6),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3('x', 1, 0)",3,2,12,BABBABBAAA(10),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3(0, 'x', 1)",3,0,12,AB(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3(0, 'x', 1)",3,1,12,BA(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3(0, 'x', 1)",3,2,12,BABBAA(6),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3(1, 0, 'x')",3,0,12,AABBAB(6),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3(1, 0, 'x')",3,1,12,AB(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3(1, 0, 'x')",3,2,12,BA(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3('x', 0, 0)",3,0,12,BA(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3('x', 0, 0)",3,1,12,BABBAA(6),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3('x', 0, 0)",3,2,12,BABBABBAAA(10),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3(0, 'x', 0)",3,0,12,AB(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3(0, 'x', 0)",3,1,12,BA(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3(0, 'x', 0)",3,2,12,BABBAA(6),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3(0, 0, 'x')",3,0,12,AABBAB(6),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3(0, 0, 'x')",3,1,12,AB(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3(0, 0, 'x')",3,2,12,BA(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3('x', 1, 1)",3,0,12,BA(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3('x', 1, 1)",3,1,12,BABBAA(6),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3('x', 1, 1)",3,2,12,BABBABBAAA(10),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3(1, 'x', 1)",3,0,12,AB(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3(1, 'x', 1)",3,1,12,BA(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3(1, 'x', 1)",3,2,12,BABBAA(6),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3(1, 1, 'x')",3,0,12,AABBAB(6),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3(1, 1, 'x')",3,1,12,AB(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+9,(move+1),"(flip,move-1)","p3(1, 1, 'x')",3,2,12,BA(2),AAA(3),BABBABBAB(9),none<=12,none<=12,none<=12
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))",none,1,0,10,none<=10,none<=10,none<=10,none<=10,none<=10,none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","(x,xbar)",2,0,10,none<=10,AAA(3),BBB(3),none<=10,none<=10,none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","(x,xbar)",2,1,10,none<=10,none<=10,none<=10,none<=10,none<=10,none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","(xbar,x)",2,0,10,none<=10,AAA(3),BBB(3),none<=10,none<=10,none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","(xbar,x)",2,1,10,none<=10,none<=10,none<=10,none<=10,none<=10,none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","(x,1)",2,0,10,none<=10,none<=10,none<=10,none<=10,AABA(4),none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","(x,1)",2,1,10,none<=10,none<=10,none<=10,none<=10,none<=10,BBAB(4)
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","(1,x)",2,0,10,none<=10,none<=10,none<=10,none<=10,AAABAB(6),none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","(1,x)",2,1,10,none<=10,none<=10,none<=10,none<=10,AABA(4),none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","(x,0)",2,0,10,none<=10,none<=10,none<=10,none<=10,none<=10,none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","(x,0)",2,1,10,none<=10,none<=10,none<=10,none<=10,none<=10,none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","(0,x)",2,0,10,none<=10,none<=10,none<=10,none<=10,none<=10,none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","(0,x)",2,1,10,none<=10,none<=10,none<=10,none<=10,none<=10,none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3('x', 0, 1)",3,0,10,none<=10,none<=10,none<=10,none<=10,AABA(4),none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3('x', 0, 1)",3,1,10,none<=10,none<=10,none<=10,none<=10,none<=10,BBABABBA(8)
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3('x', 0, 1)",3,2,10,none<=10,none<=10,none<=10,none<=10,none<=10,BABBABAB(8)
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3(1, 'x', 0)",3,0,10,none<=10,none<=10,none<=10,none<=10,AAABAB(6),none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3(1, 'x', 0)",3,1,10,none<=10,none<=10,none<=10,none<=10,AABA(4),none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3(1, 'x', 0)",3,2,10,none<=10,none<=10,none<=10,none<=10,none<=10,BBABABBA(8)
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3(0, 1, 'x')",3,0,10,none<=10,none<=10,none<=10,none<=10,AAAAABABBA(10),none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3(0, 1, 'x')",3,1,10,none<=10,none<=10,none<=10,none<=10,AAABAB(6),none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3(0, 1, 'x')",3,2,10,none<=10,none<=10,none<=10,none<=10,AABA(4),none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3('x', 1, 0)",3,0,10,none<=10,none<=10,none<=10,none<=10,AABABAAA(8),none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3('x', 1, 0)",3,1,10,none<=10,none<=10,none<=10,none<=10,none<=10,BBAB(4)
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3('x', 1, 0)",3,2,10,none<=10,none<=10,none<=10,none<=10,none<=10,BBBABA(6)
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3(0, 'x', 1)",3,0,10,none<=10,none<=10,none<=10,none<=10,AAAABABA(8),none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3(0, 'x', 1)",3,1,10,none<=10,none<=10,none<=10,none<=10,AABABAAA(8),none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3(0, 'x', 1)",3,2,10,none<=10,none<=10,none<=10,none<=10,none<=10,BBAB(4)
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3(1, 0, 'x')",3,0,10,none<=10,none<=10,none<=10,none<=10,AAAAABABAB(10),none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3(1, 0, 'x')",3,1,10,none<=10,none<=10,none<=10,none<=10,AAAABABA(8),none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3(1, 0, 'x')",3,2,10,none<=10,none<=10,none<=10,none<=10,AABABAAA(8),none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3('x', 0, 0)",3,0,10,none<=10,none<=10,none<=10,none<=10,none<=10,none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3('x', 0, 0)",3,1,10,none<=10,none<=10,none<=10,none<=10,none<=10,none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3('x', 0, 0)",3,2,10,none<=10,none<=10,none<=10,none<=10,none<=10,none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3(0, 'x', 0)",3,0,10,none<=10,none<=10,none<=10,none<=10,none<=10,none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3(0, 'x', 0)",3,1,10,none<=10,none<=10,none<=10,none<=10,none<=10,none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3(0, 'x', 0)",3,2,10,none<=10,none<=10,none<=10,none<=10,none<=10,none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3(0, 0, 'x')",3,0,10,none<=10,none<=10,none<=10,none<=10,none<=10,none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3(0, 0, 'x')",3,1,10,none<=10,none<=10,none<=10,none<=10,none<=10,none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3(0, 0, 'x')",3,2,10,none<=10,none<=10,none<=10,none<=10,none<=10,none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3('x', 1, 1)",3,0,10,none<=10,none<=10,none<=10,none<=10,none<=10,none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3('x', 1, 1)",3,1,10,none<=10,none<=10,none<=10,none<=10,none<=10,none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3('x', 1, 1)",3,2,10,none<=10,none<=10,none<=10,none<=10,none<=10,none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3(1, 'x', 1)",3,0,10,none<=10,none<=10,none<=10,none<=10,none<=10,none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3(1, 'x', 1)",3,1,10,none<=10,none<=10,none<=10,none<=10,none<=10,none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3(1, 'x', 1)",3,2,10,none<=10,none<=10,none<=10,none<=10,none<=10,none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3(1, 1, 'x')",3,0,10,none<=10,none<=10,none<=10,none<=10,none<=10,none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3(1, 1, 'x')",3,1,10,none<=10,none<=10,none<=10,none<=10,none<=10,none<=10
+26,"(skip(v=0),move+1)","(move-1,skip(v=0))","p3(1, 1, 'x')",3,2,10,none<=10,none<=10,none<=10,none<=10,none<=10,none<=10
