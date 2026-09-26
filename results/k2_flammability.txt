@@ -1,0 +1,4 @@
+k=2: words with an adjacent pair, length<=14: 7815; not flooding within 4000 passes: 0
+slowest flood: 97 passes, word ##..........##
+non-flooding: []
+DONE

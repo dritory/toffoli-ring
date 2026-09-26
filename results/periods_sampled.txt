@@ -1,0 +1,8 @@
+summary N=28 k=2 samples_ok=6 maxperiod=109041755 mean_log2period=26.14
+summary N=28 k=3 samples_ok=6 maxperiod=32056137 mean_log2period=14.35
+summary N=28 k=4 samples_ok=6 maxperiod=25925230 mean_log2period=11.10
+summary N=28 k=5 samples_ok=6 maxperiod=25969982 mean_log2period=14.15
+summary N=32 k=2 samples_ok=6 maxperiod=480428605 mean_log2period=28.74
+summary N=32 k=3 samples_ok=6 maxperiod=132497175 mean_log2period=15.37
+summary N=32 k=4 samples_ok=6 maxperiod=253815717 mean_log2period=16.13
+summary N=32 k=5 samples_ok=6 maxperiod=419890277 mean_log2period=10.43
