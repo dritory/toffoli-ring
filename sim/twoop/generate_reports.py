@@ -43,8 +43,17 @@ def guarded_section():
                  "every branch). Targets: FLIP, NEXT, PREV (unconditional, as before) plus CFLIP "
                  "(flip iff bit==1, i.e. clear-if-1), CNEXT (+g iff bit==1 else 0), CPREV (-g "
                  "iff bit==1 else 0). Window: R = ceil(floor(L/2)/g)+1 groups each side (exact "
-                 "for pruning at that L). A row is a **winner** if it has FLIP, NEXT and CFLIP; "
-                 "CNEXT/PREV/CPREV are reported separately per winner.\n\n")
+                 "for pruning at that L).\n\n")
+    lines.append("**Criterion correction (from the orchestrator):** a guarded FLIP acts on the "
+                 "same cell it tests, so CFLIP is just CLEAR and carries no data interaction -- "
+                 "the reference machine's actual data dependence comes only from SKIPZ.NEXT and "
+                 "SKIPZ.PREV, i.e. from CNEXT and CPREV. Accordingly:\n"
+                 "- **Primary winner table**: rows with FLIP, NEXT, PREV, CNEXT **and** CPREV "
+                 "all present, ranked by the total length of those five macros.\n"
+                 "- **Secondary table**: rows with FLIP, NEXT and at least one of "
+                 "CNEXT/CPREV (with or without PREV), that do not already qualify for the "
+                 "primary table.\n"
+                 "- The old FLIP+NEXT+CFLIP criterion is reported as a footnote count only.\n\n")
 
     try:
         with open(GUARDED_CSV_PATH, newline="") as f:
@@ -62,19 +71,31 @@ def guarded_section():
     def pc(s):
         return None if s.startswith("none<=") else (s.split("(")[0], int(s.split("(")[1].rstrip(")")))
 
-    winners = []
+    all_entries = []
     for r in rows:
         flip, next_, prev, cflip, cnext, cprev = (pc(r[p]) for p in GUARDED_PRIMS)
-        if flip and next_ and cflip:
-            total = flip[1] + next_[1] + cflip[1]
-            winners.append({
-                "pair_idx": int(r["pair_idx"]), "bundleA": r["bundleA"], "bundleB": r["bundleB"],
-                "encoding": r["encoding"], "g": int(r["g"]), "rest": int(r["rest"]),
-                "search_L": int(r["search_L"]),
-                "FLIP": flip, "NEXT": next_, "PREV": prev, "CFLIP": cflip,
-                "CNEXT": cnext, "CPREV": cprev, "total": total,
-            })
-    winners.sort(key=lambda w: w["total"])
+        e = {
+            "pair_idx": int(r["pair_idx"]), "bundleA": r["bundleA"], "bundleB": r["bundleB"],
+            "encoding": r["encoding"], "g": int(r["g"]), "rest": int(r["rest"]),
+            "search_L": int(r["search_L"]),
+            "FLIP": flip, "NEXT": next_, "PREV": prev, "CFLIP": cflip,
+            "CNEXT": cnext, "CPREV": cprev,
+        }
+        all_entries.append(e)
+
+    primary = []
+    secondary = []
+    old_cflip_winners = 0
+    for e in all_entries:
+        if e["FLIP"] and e["NEXT"] and e["CFLIP"]:
+            old_cflip_winners += 1
+        if e["FLIP"] and e["NEXT"] and e["PREV"] and e["CNEXT"] and e["CPREV"]:
+            e["total5"] = (e["FLIP"][1] + e["NEXT"][1] + e["PREV"][1] +
+                           e["CNEXT"][1] + e["CPREV"][1])
+            primary.append(e)
+        elif e["FLIP"] and e["NEXT"] and (e["CNEXT"] or e["CPREV"]):
+            secondary.append(e)
+    primary.sort(key=lambda w: w["total5"])
 
     n_standalone = {p: sum(1 for r in rows if pc(r[p]) is not None) for p in GUARDED_PRIMS}
 
@@ -82,58 +103,90 @@ def guarded_section():
     lines.append(f"- Canonical pairs searched: **{n_pairs}**\n")
     lines.append(f"- Total (pair, encoding, rest) rows: **{n_rows}**\n")
     lines.append(f"- Rows extended to length 12 (>= 3 of the 6 targets at length 10): **{n_l12}**\n")
-    lines.append(f"- Winners (FLIP, NEXT, CFLIP all found): **{len(winners)}**\n")
     lines.append(f"- Standalone target counts: " +
                  ", ".join(f"{p} {n_standalone[p]}" for p in GUARDED_PRIMS) + "\n")
-    lines.append(f"- Standalone SKIPZ under the STRICT criterion (for reference, from "
-                 f"skip_full.csv): see the Counts section above.\n")
+    lines.append(f"- **Primary winners (FLIP, NEXT, PREV, CNEXT, CPREV all found): "
+                 f"{len(primary)}**\n")
+    lines.append(f"- **Secondary winners (FLIP, NEXT, and at least one of CNEXT/CPREV, "
+                 f"not already primary): {len(secondary)}**\n")
+    lines.append(f"- Footnote -- old criterion (FLIP, NEXT, CFLIP all found; CFLIP carries no "
+                 f"data interaction, superseded by the correction above): {old_cflip_winners}\n")
 
-    if winners:
-        lines.append("\n### Winners, ranked by total macro length (FLIP+NEXT+CFLIP)\n")
-        lines.append("| rank | A | B | encoding | rest | FLIP | NEXT | CFLIP | total | "
-                     "also CNEXT? | also PREV? | also CPREV? |\n")
-        lines.append("|---|---|---|---|---|---|---|---|---|---|---|---|\n")
-        for i, w in enumerate(winners, 1):
-            cnext_s = f"{w['CNEXT'][0]}({w['CNEXT'][1]})" if w["CNEXT"] else "no"
-            prev_s = f"{w['PREV'][0]}({w['PREV'][1]})" if w["PREV"] else "no"
-            cprev_s = f"{w['CPREV'][0]}({w['CPREV'][1]})" if w["CPREV"] else "no"
+    def ref_check(w):
+        """Orchestrator's independently-verified reference row: A=(flip,skip(v=0),move+1),
+        B=(flip,skip(v=0),move-1), (x,xbar) rest 0, total = 3+6+12+6+12 = 39."""
+        return (w["bundleA"] == "(flip,skip(v=0),move+1)" and
+                w["bundleB"] == "(flip,skip(v=0),move-1)" and
+                w["encoding"] == "(x,xbar)" and w["rest"] == 0)
+
+    REF_TOTAL = 3 + 6 + 12 + 6 + 12  # ABB + ABBAAA + BAABBBABBABB + ABBAAB + ABBABABAABBB
+
+    if primary:
+        best = primary[0]
+        beats_ref = best["total5"] < REF_TOTAL
+        matches_ref = any(ref_check(w) for w in primary)
+        lines.append(f"\nBest total-length in the complete CSV for the primary (five-macro) "
+                     f"criterion: **{best['total5']}**. Orchestrator's independently-verified "
+                     f"reference row totals **{REF_TOTAL}** (ABB=3 + ABBAAA=6 + "
+                     f"BAABBBABBABB=12 + ABBAAB=6 + ABBABABAABBB=12). "
+                     + ("The reference row itself is the best in the complete CSV (nothing beats it).\n"
+                        if (matches_ref and best["total5"] == REF_TOTAL) else
+                        (f"**{sum(1 for w in primary if w['total5'] < REF_TOTAL)} row(s) in the "
+                         f"complete CSV beat the reference on total length.**\n" if beats_ref else
+                         "No row in the complete CSV beats the reference on total length.\n")))
+
+        lines.append("\n### (1) Primary winners, ranked by total length of FLIP+NEXT+PREV+CNEXT+CPREV\n")
+        lines.append("| rank | A | B | encoding | rest | FLIP | NEXT | PREV | CNEXT | CPREV | total5 |\n")
+        lines.append("|---|---|---|---|---|---|---|---|---|---|---|\n")
+        for i, w in enumerate(primary, 1):
             lines.append(f"| {i} | `{w['bundleA']}` | `{w['bundleB']}` | {w['encoding']} | "
                          f"{w['rest']} | {w['FLIP'][0]}({w['FLIP'][1]}) | "
-                         f"{w['NEXT'][0]}({w['NEXT'][1]}) | {w['CFLIP'][0]}({w['CFLIP'][1]}) | "
-                         f"{w['total']} | {cnext_s} | {prev_s} | {cprev_s} |\n")
+                         f"{w['NEXT'][0]}({w['NEXT'][1]}) | {w['PREV'][0]}({w['PREV'][1]}) | "
+                         f"{w['CNEXT'][0]}({w['CNEXT'][1]}) | {w['CPREV'][0]}({w['CPREV'][1]}) | "
+                         f"{w['total5']} |\n")
 
-        top = winners[0]
         enc_lookup = {(name, rest): (g, template) for (name, g, template, rest) in ENCODING_REST_LIST}
-        # Reconstruct the exact bundles from the CSV row's own text, not by
-        # re-deriving a numeric pair_idx via a fresh bundle enumeration in
-        # this process (see machine.parse_bundle's docstring for why that
-        # cross-process index lookup used to be unsafe).
-        bundleA, bundleB = parse_bundle(top["bundleA"]), parse_bundle(top["bundleB"])
-        g, template = enc_lookup[(top["encoding"], top["rest"])]
-        opsA, opsB = to_ops(bundleA), to_ops(bundleB)
-        macros = {"FLIP": top["FLIP"][0], "NEXT": top["NEXT"][0], "CFLIP": top["CFLIP"][0]}
-        if top["CNEXT"]:
-            macros["CNEXT"] = top["CNEXT"][0]
-        if top["PREV"]:
-            macros["PREV"] = top["PREV"][0]
-        if top["CPREV"]:
-            macros["CPREV"] = top["CPREV"][0]
-
         import verify_bruteforce as vb
-        results = vb.verify_guarded(opsA, opsB, g, template, top["rest"], macros,
-                                     n_groups=12, n_random=1000, seed=12345)
-        lines.append("\n### Independent brute-force re-verification (top-ranked winner)\n")
-        lines.append(f"Pair: A=`{top['bundleA']}`, B=`{top['bundleB']}`, encoding={top['encoding']}, "
-                     f"rest={top['rest']}. Cyclic tape of 12 groups, 1000 random tapes, flag_in=0 "
-                     f"only (per the guarded criterion), verified with `verify_guarded()` in "
-                     f"verify_bruteforce.py (shares no code with guarded_search.py).\n\n")
-        for prim, (ok, total, fails) in results.items():
-            lines.append(f"- {prim} = `{macros[prim]}`: {ok}/{total} checks passed"
-                         + ("" if ok == total else f" -- FAILURES: {fails}") + "\n")
+        lines.append("\n### Independent brute-force re-verification (top 3 of table 1)\n")
+        for rank, w in enumerate(primary[:3], 1):
+            bundleA, bundleB = parse_bundle(w["bundleA"]), parse_bundle(w["bundleB"])
+            g, template = enc_lookup[(w["encoding"], w["rest"])]
+            opsA, opsB = to_ops(bundleA), to_ops(bundleB)
+            macros = {"FLIP": w["FLIP"][0], "NEXT": w["NEXT"][0], "PREV": w["PREV"][0],
+                      "CNEXT": w["CNEXT"][0], "CPREV": w["CPREV"][0]}
+            results = vb.verify_guarded(opsA, opsB, g, template, w["rest"], macros,
+                                         n_groups=12, n_random=1000, seed=12345)
+            lines.append(f"\nRank {rank}: A=`{w['bundleA']}`, B=`{w['bundleB']}`, "
+                         f"encoding={w['encoding']}, rest={w['rest']}. Cyclic tape of 12 groups, "
+                         f"1000 random tapes, flag_in=0 only, verified with `verify_guarded()` "
+                         f"in verify_bruteforce.py (shares no code with guarded_search.py).\n\n")
+            for prim, (ok, total, fails) in results.items():
+                lines.append(f"- {prim} = `{macros[prim]}`: {ok}/{total} checks passed"
+                             + ("" if ok == total else f" -- FAILURES: {fails}") + "\n")
     else:
-        lines.append("\n### No winner\n")
+        lines.append("\n### (1) No primary winner\n")
         lines.append(f"Exhaustive search over **{n_pairs}** canonical pairs x 49 encoding/rest "
-                     f"combinations found no row with FLIP, NEXT and CFLIP all present.\n")
+                     f"combinations found no row with FLIP, NEXT, PREV, CNEXT and CPREV all "
+                     f"present.\n")
+
+    if secondary:
+        secondary_sorted = sorted(
+            secondary,
+            key=lambda w: w["FLIP"][1] + w["NEXT"][1] +
+            (w["CNEXT"][1] if w["CNEXT"] else 0) + (w["CPREV"][1] if w["CPREV"] else 0))
+        lines.append(f"\n### (2) Secondary rows (FLIP, NEXT, and >=1 of CNEXT/CPREV; not "
+                     f"already primary): {len(secondary)} total, top 20 shown\n")
+        lines.append("| A | B | encoding | rest | FLIP | NEXT | PREV | CNEXT | CPREV |\n")
+        lines.append("|---|---|---|---|---|---|---|---|---|\n")
+        for w in secondary_sorted[:20]:
+            prev_s = f"{w['PREV'][0]}({w['PREV'][1]})" if w["PREV"] else "no"
+            cnext_s = f"{w['CNEXT'][0]}({w['CNEXT'][1]})" if w["CNEXT"] else "no"
+            cprev_s = f"{w['CPREV'][0]}({w['CPREV'][1]})" if w["CPREV"] else "no"
+            lines.append(f"| `{w['bundleA']}` | `{w['bundleB']}` | {w['encoding']} | {w['rest']} | "
+                         f"{w['FLIP'][0]}({w['FLIP'][1]}) | {w['NEXT'][0]}({w['NEXT'][1]}) | "
+                         f"{prev_s} | {cnext_s} | {cprev_s} |\n")
+    else:
+        lines.append("\n### (2) No secondary rows beyond the primary table.\n")
 
     return lines
 
