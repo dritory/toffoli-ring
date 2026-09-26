@@ -36,12 +36,21 @@ WINDOW_FACTOR = 2    # 2P-site injection window
 PERIOD_CAP_FACTOR = 8  # period <= 8P rows
 
 
-def load_candidates():
-    """Programs from slide.csv with both a left- and a right-mover."""
+def load_candidates(require_both_movers=True):
+    """Programs from slide.csv with both a left- and a right-mover (the
+    literal task 2c precondition). If that set is empty (it is: see
+    memory.md's note), fall back to programs with >=1 memory occurrence AND
+    a mover in at least one direction -- the closest available proxy for
+    "supports both a localized structure and a signal that can reach it"."""
     cands = []
     with open(SLIDE_CSV) as f:
         for row in csv.DictReader(f):
-            if int(row["n_moves_left"]) > 0 and int(row["n_moves_right"]) > 0:
+            has_left = int(row["n_moves_left"]) > 0
+            has_right = int(row["n_moves_right"]) > 0
+            has_mem = int(row["n_memory"]) > 0
+            qualifies = (has_left and has_right) if require_both_movers else (
+                has_mem and (has_left or has_right))
+            if qualifies:
                 cands.append({
                     "program": row["program"],
                     "k": int(row["k"]),
@@ -172,8 +181,18 @@ def toggle_test(surv, max_extra_rows_cap=60):
 
 def main():
     t0 = time.time()
-    cands = load_candidates()
-    print(f"[memory] {len(cands)} candidate programs (both movers) loaded from slide.csv", flush=True)
+    strict_cands = load_candidates(require_both_movers=True)
+    used_fallback = False
+    print(f"[memory] {len(strict_cands)} candidate programs with BOTH a left- "
+          f"and right-mover (the literal task 2c precondition)", flush=True)
+    if strict_cands:
+        cands = strict_cands
+    else:
+        used_fallback = True
+        cands = load_candidates(require_both_movers=False)
+        print(f"[memory] literal precondition is EMPTY (see memory.md); falling "
+              f"back to {len(cands)} programs with >=1 memory occurrence and a "
+              f"mover in at least one direction", flush=True)
 
     # cheapest first: smallest P, then fewest ones, so a time-limited run
     # still gets a representative/complete picture at the cheap end.
@@ -205,16 +224,42 @@ def main():
         return (g["P"], sum(g["bits"]), len(g["flip_positions"]))
     all_survivors.sort(key=gadget_cost_key)
 
-    write_report(cands, results, all_survivors, t0)
+    write_report(cands, results, all_survivors, t0, used_fallback, len(strict_cands))
     return cands, results, all_survivors
 
 
-def write_report(cands, results, all_survivors, t0):
+def write_report(cands, results, all_survivors, t0, used_fallback, n_strict):
     lines = ["# Task 2c: memory search\n"]
+    if used_fallback:
+        lines.append(
+            f"**The literal precondition is empty.** Zero of the 54,320 stationary "
+            "programs from task 2b have both a moves_left AND a moves_right "
+            "instance among their own middle-block single-bit disturbances "
+            f"(checked: {n_strict} qualify). This is a genuine structural "
+            "finding, not a search-coverage gap: 28,610 programs have >=1 "
+            "moves_left instance and 421 have >=1 moves_right instance, but "
+            "these two sets are disjoint -- among programs with any memory "
+            "occurrence, not one has a right-mover either. The static frame's "
+            "copy sites always shift data left one site per row (u_r(x) = "
+            "u_{r-1}(x+s)); gate chains have to fight this systemic leftward "
+            "drift to produce a net rightward group velocity, and apparently "
+            "no program in this search does that while also supporting a "
+            "clean independent leftward mover elsewhere in the same block.\n"
+        )
+        lines.append(
+            f"\n**Fallback used for the search below:** the {len(cands)} "
+            "programs with >=1 memory occurrence (a single-bit disturbance "
+            "that settles into a stationary periodic pattern, from task 2b) "
+            "AND a mover in at least one direction (in practice, always "
+            "moves_left -- see above). This tests the same physical "
+            "question (can a stationary structure be reached and possibly "
+            "toggled by an arriving signal) with a signal from whichever "
+            "direction the program actually supports, rather than from "
+            "both.\n"
+        )
     lines.append(
-        f"{len(cands)} (k,s,program) combinations from slide.csv have both a "
-        "left-mover and a right-mover among their own single-bit "
-        "disturbances. For each, every pattern of 2-4 flipped sites within "
+        f"\n{len(cands)} candidate (k,s,program) combinations tested. For each, "
+        "every pattern of 2-4 flipped sites within "
         "the 2P-site window [6P,8P) (blocks 6-7) was tried, evolved 40P "
         "rows, and kept if the difference from the background stayed "
         "within that 2P window and settled into a period <=8P rows (early "
