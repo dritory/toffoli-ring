@@ -105,6 +105,65 @@ def verify_clear():
     return total, fails
 
 
+# --- GAPCNOT(K): flip T iff A==1, target K+1 cells away, cells 2..K-1 ------
+# untouched (other blocks may live there). The Toffoli template (§3b) with
+# control B replaced by a constant-1 cell, at any distance K. Supplied by
+# the orchestrator; independently re-verified here (exhaustively over
+# (a,t,g0,g1) and randomly over the K-2 untouched "mid" cells).
+def gapcnot_word(K):
+    s = ("CC" + "N" * K + "FNF" + "N" * 3 + "DD" + "P" * (K + 4)
+         + "C" + "N" * K + "FNF" + "N" * 3 + "DD" + "P" * (K + 4))
+    return parse_cd(s)
+
+
+def gapcnot_window(K):
+    return K + 7
+
+
+def verify_gapcnot(K, n_mid_random_trials=50, seed=0):
+    import itertools
+    import random
+    rng = random.Random(seed)
+    word = gapcnot_word(K)
+    n = gapcnot_window(K)
+    n_mid = K - 2
+    total = fails = 0
+    for a, t, g0, g1 in itertools.product([0, 1], repeat=4):
+        for _ in range(n_mid_random_trials if n_mid > 0 else 1):
+            mids = [rng.randint(0, 1) for _ in range(n_mid)]
+            w = [0] * n
+            w[0] = a
+            w[1] = 1
+            for i, v in enumerate(mids):
+                w[2 + i] = v
+            w[K] = g0
+            w[K + 1] = t
+            w[K + 2] = g1
+            w[K + 3] = 1 - t
+            w[K + 4] = 0
+            w[K + 5] = 1
+            w[K + 6] = 1
+            total += 1
+            cur = list(w)
+            p = 0
+            ok = True
+            for letter in word:
+                r = step_raw(letter, cur, p, n)
+                if r is None:
+                    ok = False
+                    break
+                p = r
+            want_t = t ^ a
+            want = list(w)
+            want[K + 1] = want_t
+            want[K + 3] = 1 - want_t
+            if not ok or cur != want or p != 0:
+                fails += 1
+            if n_mid == 0:
+                break
+    return total, fails
+
+
 def verify_toffoli():
     import itertools
     word = TOFF['word']
@@ -155,8 +214,11 @@ def verify_cnot():
 
 if __name__ == "__main__":
     t, f = verify_cnot()
-    print(f"CNOT:  {t-f}/{t} valuations passed  (len={len(CNOT['word'])}, window=4)")
+    print(f"CNOT:    {t-f}/{t} valuations passed  (len={len(CNOT['word'])}, window=4)")
     t, f = verify_clear()
-    print(f"CLEAR: {t-f}/{t} valuations passed  (len={len(CLEAR['word'])}, window=2)")
+    print(f"CLEAR:   {t-f}/{t} valuations passed  (len={len(CLEAR['word'])}, window=2)")
     t, f = verify_toffoli()
-    print(f"TOFF:  {t-f}/{t} valuations passed  (len={len(TOFF['word'])}, window=13)")
+    print(f"TOFF:    {t-f}/{t} valuations passed  (len={len(TOFF['word'])}, window=13)")
+    for K in (2, 4, 8):
+        t, f = verify_gapcnot(K)
+        print(f"GAPCNOT(K={K}): {t-f}/{t} passed  (len={len(gapcnot_word(K))}, window={gapcnot_window(K)})")
