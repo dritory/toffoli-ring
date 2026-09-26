@@ -17,3 +17,18 @@ encoding x rest combos: 49
   pairs done 375/1017  rows=18375  winners=61  elapsed=548.4s
   pairs done 400/1017  rows=19600  winners=69  elapsed=570.8s
   pairs done 425/1017  rows=20825  winners=69  elapsed=593.4s
+  pairs done 450/1017  rows=22050  winners=71  elapsed=615.2s
+  pairs done 475/1017  rows=23275  winners=71  elapsed=636.8s
+  pairs done 500/1017  rows=24500  winners=71  elapsed=660.3s
+  pairs done 525/1017  rows=25725  winners=75  elapsed=682.0s
+  pairs done 550/1017  rows=26950  winners=77  elapsed=704.6s
+  pairs done 575/1017  rows=28175  winners=80  elapsed=728.2s
+  pairs done 600/1017  rows=29400  winners=80  elapsed=752.0s
+  pairs done 625/1017  rows=30625  winners=80  elapsed=779.4s
+  pairs done 650/1017  rows=31850  winners=80  elapsed=811.1s
+  pairs done 675/1017  rows=33075  winners=80  elapsed=842.5s
+  pairs done 700/1017  rows=34300  winners=80  elapsed=872.7s
+  pairs done 725/1017  rows=35525  winners=80  elapsed=903.6s
+  pairs done 750/1017  rows=36750  winners=80  elapsed=936.3s
+  pairs done 775/1017  rows=37975  winners=80  elapsed=968.1s
+  pairs done 800/1017  rows=39200  winners=80  elapsed=999.7s

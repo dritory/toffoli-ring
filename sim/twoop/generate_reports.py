@@ -10,7 +10,7 @@ both flags, and include that in the summary.
 import ast
 import csv
 
-from pairs import BUNDLES, canonical_pairs
+from machine import parse_bundle
 from enc import ENCODING_REST_LIST
 from search import search_pair
 
@@ -103,10 +103,12 @@ def guarded_section():
                          f"{w['total']} | {cnext_s} | {prev_s} | {cprev_s} |\n")
 
         top = winners[0]
-        cp = canonical_pairs()
         enc_lookup = {(name, rest): (g, template) for (name, g, template, rest) in ENCODING_REST_LIST}
-        ai, bi = cp[top["pair_idx"]]
-        bundleA, bundleB = BUNDLES[ai], BUNDLES[bi]
+        # Reconstruct the exact bundles from the CSV row's own text, not by
+        # re-deriving a numeric pair_idx via a fresh bundle enumeration in
+        # this process (see machine.parse_bundle's docstring for why that
+        # cross-process index lookup used to be unsafe).
+        bundleA, bundleB = parse_bundle(top["bundleA"]), parse_bundle(top["bundleB"])
         g, template = enc_lookup[(top["encoding"], top["rest"])]
         opsA, opsB = to_ops(bundleA), to_ops(bundleB)
         macros = {"FLIP": top["FLIP"][0], "NEXT": top["NEXT"][0], "CFLIP": top["CFLIP"][0]}
@@ -214,12 +216,10 @@ def main():
                          f"{prev_s} | {w['total']} |\n")
 
         lines.append("\n## Identity words for each winner\n")
-        cp = canonical_pairs()
         enc_lookup = {(name, rest): (g, template) for (name, g, template, rest) in ENCODING_REST_LIST}
         verify_target = None
         for w in winners:
-            ai, bi = cp[w["pair_idx"]]
-            bundleA, bundleB = BUNDLES[ai], BUNDLES[bi]
+            bundleA, bundleB = parse_bundle(w["bundleA"]), parse_bundle(w["bundleB"])
             g, template = enc_lookup[(w["encoding"], w["rest"])]
             _, idents = search_pair(bundleA, bundleB, g, template, w["rest"], w["search_L"],
                                      want=PRIMS, collect_identities=True, max_identities=6)

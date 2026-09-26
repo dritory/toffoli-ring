@@ -24,6 +24,17 @@ Under the strict criterion above (SKIPZ as a standalone macro, every macro skip-
 
 The strict criterion is stronger than constant-factor compilation needs. Compile "SKIPZ X" jointly as one guarded macro CX. The flag is then internal to macros, every macro starts and ends with the flag clear, and the target set is FLIP, NEXT, PREV, CFLIP (clear if 1), CNEXT, CPREV, the same as §6 but with the skip available inside macros. This guarded criterion is the primary one. The strict criterion is kept as a stronger result: a pair that passes it also compiles the reference program without joint compilation.
 
+## 1c. Correction: the useful guarded ops are guarded moves, not guarded FLIP
+
+A guard tests the cell under the pointer, and a guarded FLIP acts on that same cell, so SKIPZ·FLIP is CLEAR and SKIPZ·SKIPZ is a no-op. Neither makes two cells interact. All data dependence of the reference machine comes from SKIPZ·NEXT and SKIPZ·PREV. The winner criterion is therefore FLIP, NEXT, PREV, CNEXT, CPREV (CFLIP not required).
+
+**Verified winner (guarded criterion).** A = (flip; set skip iff cell is now 0; move +1), B = the same with move −1. The opcode bit only selects the direction. Encoding (x, x̄), rest on x.
+
+    FLIP  = ABB           NEXT  = ABBAAA        PREV = BAABBBABBABB
+    CNEXT = ABBAAB        CPREV = ABBABABAABBB
+
+Checked independently of the search code on 3000 random 12-group tapes (`sim/twoop/check_symmetric_winner.py`). Remaining step: the compiler from a Turing machine to a fixed cyclic program over {FLIP, NEXT, PREV, CNEXT, CPREV}, one TM step per program pass (in progress, `sim/compile/`).
+
 ## 2. Near-solution (valid under the guarded criterion only)
 
 A = (flip, then +1), B = (−1), no skip, no encoding:

@@ -15,7 +15,7 @@ a full winner (FLIP + NEXT + SKIPZ all found) under the wider window.
 import csv
 import time
 
-from machine import Bundle, Op, FLIP, MOVE, SKIP, ALWAYS
+from machine import Bundle, Op, FLIP, MOVE, SKIP, ALWAYS, parse_bundle
 from enc import ENCODINGS, ENCODING_REST_LIST
 from pairs import BUNDLES, canonical_pairs
 from search import search_pair
@@ -76,7 +76,6 @@ def rerun_step1():
 # ---------------------------------------------------------------------------
 
 def rerun_step2_promising(csv_path):
-    cp = canonical_pairs()
     enc_lookup = {(name, rest): (g, template)
                   for (name, g, template, rest) in ENCODING_REST_LIST}
 
@@ -97,8 +96,13 @@ def rerun_step2_promising(csv_path):
     out_rows = []
     for row in promising:
         pidx = int(row["pair_idx"])
-        ai, bi = cp[pidx]
-        bundleA, bundleB = BUNDLES[ai], BUNDLES[bi]
+        # Reconstruct from the CSV row's own bundle text, not by
+        # re-deriving pidx via a fresh canonical_pairs() call in this
+        # process -- see machine.parse_bundle's docstring: an earlier
+        # version of all_bundles() dedup'd via a bare set(), whose order
+        # depends on hash randomization and so could disagree between
+        # separate process invocations for the same numeric pidx.
+        bundleA, bundleB = parse_bundle(row["bundleA"]), parse_bundle(row["bundleB"])
         name = row["encoding"]
         rest = int(row["rest"])
         g, template = enc_lookup[(name, rest)]

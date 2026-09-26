@@ -102,9 +102,62 @@ def all_bundles() -> List[Bundle]:
         for m in move_opts:
             for s in skip_opts:
                 present = [op for op in (f, m, s) if op is not None]
-                for perm in set(permutations(present)):
+                # Deterministic dedup of permutations, preserving
+                # itertools.permutations' own (input-order-derived) order.
+                # A bare set(...) here would iterate in an order that
+                # depends on Op's string-field hashes, which vary across
+                # Python processes under hash randomization (PYTHONHASHSEED)
+                # -- that silently breaks any cross-process reuse of a
+                # bundle's numeric index (e.g. a "pair_idx" written by one
+                # process and re-looked-up by another).
+                seen = []
+                for perm in permutations(present):
+                    if perm not in seen:
+                        seen.append(perm)
+                for perm in seen:
                     bundles.append(Bundle(tuple(perm)))
     return bundles
+
+
+_OP_COND_MAP = {"0": EQ0, "1": EQ1}
+
+
+def parse_bundle(s):
+    """Inverse of Bundle.__repr__ / Op.__repr__ -- reconstructs a Bundle
+    from its printed form (e.g. "(flip,move+1)", "(skip(v=0),move-1)",
+    "nop"). Used to recover the exact bundle that was tested from a
+    results CSV's own text, rather than re-deriving it from a numeric
+    index via a fresh (and possibly differently-ordered) bundle
+    enumeration in another process."""
+    s = s.strip()
+    if s == "nop":
+        return Bundle(())
+    assert s.startswith("(") and s.endswith(")"), s
+    inner = s[1:-1]
+    ops = []
+    for tok in inner.split(","):
+        tok = tok.strip()
+        if tok == "flip":
+            ops.append(Op(FLIP))
+        elif tok.startswith("move"):
+            # move+1 / move-1 / move+1(iff=0) / move-1(iff=1)
+            sign = tok[4]
+            assert sign in "+-"
+            dir_ = 1 if sign == "+" else -1
+            rest = tok[6:]  # after "move+1" or "move-1"
+            if rest == "":
+                cond = ALWAYS
+            else:
+                assert rest.startswith("(iff=") and rest.endswith(")")
+                cond = _OP_COND_MAP[rest[5:-1]]
+            ops.append(Op(MOVE, dir=dir_, cond=cond))
+        elif tok.startswith("skip"):
+            assert tok.startswith("skip(v=") and tok.endswith(")")
+            v = int(tok[7:-1])
+            ops.append(Op(SKIP, v=v))
+        else:
+            raise ValueError(f"cannot parse op token {tok!r} in bundle {s!r}")
+    return Bundle(tuple(ops))
 
 
 # --- bundle execution on a small local window ------------------------------
