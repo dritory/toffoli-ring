@@ -1,3 +1,17 @@
 canonical pairs: 1017
 encoding x rest combos: 49
   pairs done 25/1017  rows=1225  winners=15  elapsed=131.5s
+  pairs done 50/1017  rows=2450  winners=21  elapsed=179.9s
+  pairs done 75/1017  rows=3675  winners=42  elapsed=215.7s
+  pairs done 100/1017  rows=4900  winners=50  elapsed=245.2s
+  pairs done 125/1017  rows=6125  winners=55  elapsed=277.9s
+  pairs done 150/1017  rows=7350  winners=55  elapsed=307.0s
+  pairs done 175/1017  rows=8575  winners=55  elapsed=338.1s
+  pairs done 200/1017  rows=9800  winners=55  elapsed=367.2s
+  pairs done 225/1017  rows=11025  winners=55  elapsed=399.6s
+  pairs done 250/1017  rows=12250  winners=55  elapsed=425.3s
+  pairs done 275/1017  rows=13475  winners=55  elapsed=448.9s
+  pairs done 300/1017  rows=14700  winners=55  elapsed=470.0s
+  pairs done 325/1017  rows=15925  winners=55  elapsed=492.7s
+  pairs done 350/1017  rows=17150  winners=57  elapsed=519.8s
+  pairs done 375/1017  rows=18375  winners=61  elapsed=548.4s

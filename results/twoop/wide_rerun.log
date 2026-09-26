@@ -1,0 +1,6 @@
+Rerunning step 1 with half_width=2 ...
+  step1 rerun done in 17.3s
+Rerunning step2 promising rows with half_width=2 ...
+  step2 rerun done in 242.7s (275 promising rows)
+DONE. step1_new_hits=0 step1_new_winners=0 step2_promising=275 step2_new_hits=0 step2_new_winners=0
+total elapsed 260.1s

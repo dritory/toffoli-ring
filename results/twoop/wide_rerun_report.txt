@@ -1,0 +1,7 @@
+Step 1 rerun (half_width=2, L=10): 160 configurations
+Step 1 new hits (found wide, not found narrow): 0
+Step 1 new full winners under wide window: 0
+
+Step 2 promising rows rechecked (had search_L=12, i.e. >=2/3 at L=10): 275
+Step 2 new hits (found wide, not found narrow): 0
+Step 2 new full winners under wide window: 0

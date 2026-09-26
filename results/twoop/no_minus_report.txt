@@ -1,0 +1,9 @@
+no -1 subspace confirmatory run, L=8
+pairs tested: 2550
+(pair x encoding x rest) rows checked: 124950
+rows where FLIP was found: 1870
+rows where NEXT was found: 1684
+rows where SKIPZ was found: 2100
+winners (FLIP+NEXT+SKIPZ together): 0
+
+Confirms the handover's 'A -1 move is necessary' lemma: exhaustive at L=8 across all bundles with no -1 move, no encoding/rest achieves FLIP+NEXT+SKIPZ together.

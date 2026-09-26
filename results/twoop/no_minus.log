@@ -12,3 +12,6 @@ no -1 subspace pairs: 2550
   pair 2000/2550  elapsed=345.9s
   pair 2200/2550  elapsed=381.8s
   pair 2400/2550  elapsed=420.3s
+DONE. pairs=2550 rows_checked=124950 elapsed=448.7s
+any FLIP found in 1870 rows, any NEXT in 1684 rows, any SKIPZ in 2100 rows
+winners (all three): 0
