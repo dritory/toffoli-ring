@@ -41,11 +41,11 @@ Step 2 new full winners under wide window: 0
 Per orchestrator instruction: SKIPZ X compiled jointly as one macro CX, flag internal to the macro (flag_in=0 only; the word must end with flag_out=0 in every branch). Targets: FLIP, NEXT, PREV (unconditional, as before) plus CFLIP (flip iff bit==1, i.e. clear-if-1), CNEXT (+g iff bit==1 else 0), CPREV (-g iff bit==1 else 0). Window: R = ceil(floor(L/2)/g)+1 groups each side (exact for pruning at that L). A row is a **winner** if it has FLIP, NEXT and CFLIP; CNEXT/PREV/CPREV are reported separately per winner.
 
 ### Counts
-- Canonical pairs searched: **546**
-- Total (pair, encoding, rest) rows: **26735**
-- Rows extended to length 12 (>= 3 of the 6 targets at length 10): **582**
-- Winners (FLIP, NEXT, CFLIP all found): **77**
-- Standalone target counts: FLIP 2903, NEXT 2946, PREV 1899, CFLIP 2208, CNEXT 898, CPREV 1462
+- Canonical pairs searched: **834**
+- Total (pair, encoding, rest) rows: **40829**
+- Rows extended to length 12 (>= 3 of the 6 targets at length 10): **629**
+- Winners (FLIP, NEXT, CFLIP all found): **80**
+- Standalone target counts: FLIP 3857, NEXT 2982, PREV 2570, CFLIP 4773, CNEXT 937, CPREV 1872
 - Standalone SKIPZ under the STRICT criterion (for reference, from skip_full.csv): see the Counts section above.
 
 ### Winners, ranked by total macro length (FLIP+NEXT+CFLIP)
@@ -114,20 +114,23 @@ Per orchestrator instruction: SKIPZ X compiled jointly as one macro CX, flag int
 | 61 | `(skip(v=0),move+1)` | `(flip,skip(v=0),move-1(iff=1))` | p3('x', 1, 1) | 0 | BA(2) | BAABBBBBAAAA(12) | ABBBABBBBB(10) | 24 | no | no | BABBABBAB(9) |
 | 62 | `(skip(v=0),move+1)` | `(flip,skip(v=0),move-1(iff=1))` | p3(1, 'x', 1) | 1 | BA(2) | BAABBBBBAAAA(12) | ABBBABBBBB(10) | 24 | no | no | BABBABBAB(9) |
 | 63 | `(skip(v=0),move+1)` | `(flip,skip(v=0),move-1(iff=1))` | p3(1, 1, 'x') | 2 | BA(2) | BAABBBBBAAAA(12) | ABBBABBBBB(10) | 24 | no | no | BABBABBAB(9) |
-| 64 | `(skip(v=0),move+1)` | `(skip(v=0),move-1(iff=1),flip)` | p3('x', 1, 1) | 0 | AABABBB(7) | ABABBAAA(8) | AABBABBAAB(10) | 25 | no | no | no |
-| 65 | `(skip(v=0),move+1)` | `(skip(v=0),move-1(iff=1),flip)` | p3(1, 'x', 1) | 1 | AABABBB(7) | ABABBAAA(8) | AABBABBAAB(10) | 25 | no | no | no |
-| 66 | `(skip(v=0),move+1)` | `(skip(v=0),move-1(iff=1),flip)` | p3(1, 1, 'x') | 2 | AABABBB(7) | ABABBAAA(8) | AABBABBAAB(10) | 25 | no | no | no |
-| 67 | `(skip(v=0),move+1)` | `(move-1(iff=0),flip)` | p3('x', 0, 0) | 0 | AABBABB(7) | AABBABAAAA(10) | BAABBBBAA(9) | 26 | AABAB(5) | no | no |
-| 68 | `(skip(v=0),move+1)` | `(move-1(iff=0),flip)` | p3(0, 'x', 0) | 1 | AABBABB(7) | AABBABAAAA(10) | BAABBBBAA(9) | 26 | AABAB(5) | no | no |
-| 69 | `(skip(v=0),move+1)` | `(move-1(iff=0),flip)` | p3(0, 0, 'x') | 2 | AABBABB(7) | AABBABAAAA(10) | BAABBBBAA(9) | 26 | AABAB(5) | no | no |
-| 70 | `(skip(v=0),move+1)` | `(flip,move-1(iff=0),skip(v=0))` | p3('x', 1, 0) | 1 | BBBABABB(8) | AAAAABBABB(10) | BBAABABB(8) | 26 | no | no | no |
-| 71 | `(skip(v=0),move+1)` | `(flip,move-1(iff=0),skip(v=0))` | p3(0, 'x', 1) | 2 | BBBABABB(8) | AAAAABBABB(10) | BBAABABB(8) | 26 | no | no | no |
-| 72 | `(move+1,skip(v=0),flip)` | `(skip(v=1),move-1)` | (x,xbar) | 1 | BBBAAA(6) | AAABBBAAA(9) | BAABABBAABAA(12) | 27 | no | BBB(3) | no |
-| 73 | `(move+1,skip(v=0),flip)` | `(skip(v=1),move-1)` | (xbar,x) | 1 | BBBAAA(6) | AAABBBAAA(9) | BAABABBABAAA(12) | 27 | no | BBB(3) | no |
-| 74 | `(skip(v=0),move+1,flip)` | `(move-1,skip(v=1))` | (x,xbar) | 0 | ABBBAA(6) | ABBAAABAA(9) | ABABBAABBAAB(12) | 27 | no | BBB(3) | no |
-| 75 | `(skip(v=0),move+1,flip)` | `(move-1,skip(v=1))` | (xbar,x) | 0 | ABBBAA(6) | ABBAAABAA(9) | AABBABABBABA(12) | 27 | no | BBB(3) | no |
-| 76 | `(flip,skip(v=0),move+1)` | `(move-1,skip(v=1))` | (x,xbar) | 0 | AAABBB(6) | AAABBBAAA(9) | AAABABABAAAB(12) | 27 | no | BBB(3) | no |
-| 77 | `(flip,skip(v=0),move+1)` | `(move-1,skip(v=1))` | (xbar,x) | 0 | AAABBB(6) | AAABBBAAA(9) | AAABABAAABBA(12) | 27 | no | BBB(3) | no |
+| 64 | `(flip,skip(v=0),move+1)` | `(skip(v=0),flip,move-1(iff=1))` | p3('x', 1, 1) | 0 | ABABBBBBA(9) | ABBBAABABA(10) | ABBBB(5) | 24 | no | no | no |
+| 65 | `(flip,skip(v=0),move+1)` | `(skip(v=0),flip,move-1(iff=1))` | p3(1, 'x', 1) | 1 | ABABBBBBA(9) | ABBBAABABA(10) | ABBBB(5) | 24 | no | no | no |
+| 66 | `(flip,skip(v=0),move+1)` | `(skip(v=0),flip,move-1(iff=1))` | p3(1, 1, 'x') | 2 | ABABBBBBA(9) | ABBBAABABA(10) | ABBBB(5) | 24 | no | no | no |
+| 67 | `(skip(v=0),move+1)` | `(skip(v=0),move-1(iff=1),flip)` | p3('x', 1, 1) | 0 | AABABBB(7) | ABABBAAA(8) | AABBABBAAB(10) | 25 | no | no | no |
+| 68 | `(skip(v=0),move+1)` | `(skip(v=0),move-1(iff=1),flip)` | p3(1, 'x', 1) | 1 | AABABBB(7) | ABABBAAA(8) | AABBABBAAB(10) | 25 | no | no | no |
+| 69 | `(skip(v=0),move+1)` | `(skip(v=0),move-1(iff=1),flip)` | p3(1, 1, 'x') | 2 | AABABBB(7) | ABABBAAA(8) | AABBABBAAB(10) | 25 | no | no | no |
+| 70 | `(skip(v=0),move+1)` | `(move-1(iff=0),flip)` | p3('x', 0, 0) | 0 | AABBABB(7) | AABBABAAAA(10) | BAABBBBAA(9) | 26 | AABAB(5) | no | no |
+| 71 | `(skip(v=0),move+1)` | `(move-1(iff=0),flip)` | p3(0, 'x', 0) | 1 | AABBABB(7) | AABBABAAAA(10) | BAABBBBAA(9) | 26 | AABAB(5) | no | no |
+| 72 | `(skip(v=0),move+1)` | `(move-1(iff=0),flip)` | p3(0, 0, 'x') | 2 | AABBABB(7) | AABBABAAAA(10) | BAABBBBAA(9) | 26 | AABAB(5) | no | no |
+| 73 | `(skip(v=0),move+1)` | `(flip,move-1(iff=0),skip(v=0))` | p3('x', 1, 0) | 1 | BBBABABB(8) | AAAAABBABB(10) | BBAABABB(8) | 26 | no | no | no |
+| 74 | `(skip(v=0),move+1)` | `(flip,move-1(iff=0),skip(v=0))` | p3(0, 'x', 1) | 2 | BBBABABB(8) | AAAAABBABB(10) | BBAABABB(8) | 26 | no | no | no |
+| 75 | `(move+1,skip(v=0),flip)` | `(skip(v=1),move-1)` | (x,xbar) | 1 | BBBAAA(6) | AAABBBAAA(9) | BAABABBAABAA(12) | 27 | no | BBB(3) | no |
+| 76 | `(move+1,skip(v=0),flip)` | `(skip(v=1),move-1)` | (xbar,x) | 1 | BBBAAA(6) | AAABBBAAA(9) | BAABABBABAAA(12) | 27 | no | BBB(3) | no |
+| 77 | `(skip(v=0),move+1,flip)` | `(move-1,skip(v=1))` | (x,xbar) | 0 | ABBBAA(6) | ABBAAABAA(9) | ABABBAABBAAB(12) | 27 | no | BBB(3) | no |
+| 78 | `(skip(v=0),move+1,flip)` | `(move-1,skip(v=1))` | (xbar,x) | 0 | ABBBAA(6) | ABBAAABAA(9) | AABBABABBABA(12) | 27 | no | BBB(3) | no |
+| 79 | `(flip,skip(v=0),move+1)` | `(move-1,skip(v=1))` | (x,xbar) | 0 | AAABBB(6) | AAABBBAAA(9) | AAABABABAAAB(12) | 27 | no | BBB(3) | no |
+| 80 | `(flip,skip(v=0),move+1)` | `(move-1,skip(v=1))` | (xbar,x) | 0 | AAABBB(6) | AAABBBAAA(9) | AAABABAAABBA(12) | 27 | no | BBB(3) | no |
 
 ### Independent brute-force re-verification (top-ranked winner)
 Pair: A=`(move+1)`, B=`(move-1,skip(v=0),flip)`, encoding=(x,xbar), rest=1. Cyclic tape of 12 groups, 1000 random tapes, flag_in=0 only (per the guarded criterion), verified with `verify_guarded()` in verify_bruteforce.py (shares no code with guarded_search.py).
