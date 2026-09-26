@@ -7,3 +7,4 @@ summary N=32 k=3 samples_ok=6 maxperiod=132497175 mean_log2period=15.37
 summary N=32 k=4 samples_ok=6 maxperiod=253815717 mean_log2period=16.13
 summary N=32 k=5 samples_ok=6 maxperiod=419890277 mean_log2period=10.43
 summary N=36 k=2 samples_ok=3 maxperiod=1464970495 mean_log2period=29.70
+summary N=36 k=3 samples_ok=3 maxperiod=32 mean_log2period=4.33
