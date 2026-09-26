@@ -91,12 +91,55 @@ def measure_background_velocity(k, pat, copies=300, passes=8):
     return v, bg
 
 
+def to_marks(bits):
+    return "".join("*" if b else "." for b in bits)
+
+
 def comoving(rows, v, n):
     out = []
     for t, r in enumerate(rows):
         sh = (v * t) % n
         out.append(r[sh:] + r[:sh])
     return out
+
+
+def track_unwrapped_position(dev, n, center):
+    """Unwrapped (non-modular) unified position of the run nearest `center` at
+    t=0, followed frame to frame by nearest-run continuity. Returns list of
+    unwrapped positions (None where no run exists)."""
+    pos_unwrapped = []
+    prev_wrapped = None
+    prev_unwrapped = None
+    for d in dev:
+        runs = all_runs(d)
+        if not runs:
+            pos_unwrapped.append(None)
+            continue
+        if prev_wrapped is None:
+            pos, _ = min(runs, key=lambda r: min((r[0] - center) % n, (center - r[0]) % n))
+        else:
+            pos, _ = min(runs, key=lambda r: min((r[0] - prev_wrapped) % n, (prev_wrapped - r[0]) % n))
+        if prev_wrapped is None:
+            unwrapped = pos
+        else:
+            delta = (pos - prev_wrapped) % n
+            if delta > n // 2:
+                delta -= n
+            unwrapped = prev_unwrapped + delta
+        pos_unwrapped.append(unwrapped)
+        prev_wrapped, prev_unwrapped = pos, unwrapped
+    return pos_unwrapped
+
+
+def measure_velocity(dev, n, center):
+    pu = track_unwrapped_position(dev, n, center)
+    valid = [(t, p) for t, p in enumerate(pu) if p is not None]
+    if len(valid) < 2:
+        return None
+    (t0, p0), (t1, p1) = valid[0], valid[-1]
+    if t1 == t0:
+        return None
+    return (p1 - p0) / (t1 - t0)
 
 
 def classify_and_track(dev, n, center, bound_total=25):
@@ -135,7 +178,8 @@ def main():
         copies = 600  # large ring: keeps the ring's own forced boundary kink
         n = copies * p  # (see module docstring) far from the injected defect
         passes = 200  # for the whole 200-pass test window
-        v, bg = measure_background_velocity(k, pat)
+        v, _ = measure_background_velocity(k, pat)
+        bg = run(pat * copies, k, passes)  # full-length clean reference, same N
         lines.append(f"\n## k={k}, background pattern `{to_str(pat)}` (p={p}), "
                       f"N={n}, measured per-pass shift v={v}\n")
         print(f"k={k} pat={to_str(pat)} p={p} N={n} v={v}")
@@ -159,7 +203,12 @@ def main():
                                            max_w=stats["max_total"],
                                            final_nruns=stats["final_nruns"],
                                            rows=rows, bg=bg, dev=dev))
-        print(f"  survivors: {len(survivors)} / 30 perturbations")
+        # measure each survivor's own absolute velocity (raw ring cells/pass,
+        # already net of the background's own drift v) via unwrapped position
+        for surv in survivors:
+            surv["velocity"] = measure_velocity(surv["dev"], n, center)
+        print(f"  survivors: {len(survivors)} / 30 perturbations, "
+              f"velocities={[round(s['velocity'],2) if s['velocity'] is not None else None for s in survivors]}")
         survivors_by_k[k] = dict(v=v, n=n, p=p, pat=pat, survivors=survivors, bg=bg,
                                   copies=copies, center=center, passes=passes)
 
@@ -167,17 +216,17 @@ def main():
                       f"{len(survivors)}\n")
         for surv in survivors:
             w, patch = surv["width"], surv["patch"]
+            vel_str = f"{surv['velocity']:.3f}" if surv['velocity'] is not None else "n/a"
             lines.append(f"\n### k={k} bg=`{to_str(pat)}` patch width={w} "
                           f"pattern=`{to_str(patch)}` (max total footprint over "
                           f"200 passes = {surv['max_w']}, ends as {surv['final_nruns']} "
-                          f"separate run(s))\n")
+                          f"separate run(s), measured velocity = {vel_str} cells/pass)\n")
             lines.append("```")
-            cm = comoving(surv["rows"], v, n)
+            cm_dev = comoving(surv["dev"], v, n)  # co-moving: cancels the background's own drift
             lo, hi = max(0, center - 30), min(n, center + 30)
-            for t in range(0, min(60, passes + 1), 2):
-                row = cm[t]
-                window = row[(lo - v * 0) % n: hi] if hi <= n else row  # simple slice ok since lo,hi in range
-                lines.append(f"t={t:3d}: {to_str(row[lo:hi])}")
+            for t in range(0, min(80, passes + 1), 2):
+                window = cm_dev[t][lo:hi]
+                lines.append(f"t={t:3d}: {to_marks(window)}")
             lines.append("```")
 
     # ---- pairwise collisions of survivors (within each k) ----
@@ -188,19 +237,27 @@ def main():
         if len(survs) < 1:
             continue
         lines.append(f"\n### k={k}\n")
-        # pair each survivor with itself and with a different survivor (if any),
-        # placed far apart on a big ring, evolve until (if) they meet.
-        copies = 160
+        with_vel = [s for s in survs if s["velocity"] is not None]
+        if len(with_vel) < 1:
+            lines.append("(no survivor with a measurable velocity)\n")
+            continue
+        vs = sorted(set(round(s["velocity"], 2) for s in with_vel))
+        lines.append(f"All {len(with_vel)} survivors share (to 2 decimals) velocity "
+                      f"{vs}: this background supports a single soliton species; "
+                      f"different initial patches just launch (possibly with a "
+                      f"different phase) the same particle. So collisions are "
+                      f"tested at CLOSE initial separation (particles moving at "
+                      f"the same speed never approach at long range).\n")
+        # take two distinct-width survivors when available (else the same one twice)
+        s1 = with_vel[0]
+        s2 = with_vel[1] if len(with_vel) > 1 else with_vel[0]
+        copies = 200
         n = copies * p
-        passes = 300
-        pairs = []
-        if len(survs) >= 2:
-            pairs.append((survs[0], survs[1]))
-        pairs.append((survs[0], survs[0]))  # same-particle collision (both directions)
-
-        for (s1, s2) in pairs:
+        passes = 200
+        for sep in (2, 4, 8, 16, 32):
+            posA = n // 4
+            posB = (posA + sep) % n
             bg = run(pat * copies, k, passes)
-            posA, posB = n // 3, 2 * n // 3
             s = pat * copies
             for idx, b in enumerate(s1["patch"]):
                 s[(posA + idx) % n] = b
@@ -213,12 +270,18 @@ def main():
             vanished_at = next((t for t, c in enumerate(n_runs_over_time) if t > 2 and c == 0), None)
             lines.append(f"\nwidths {s1['width']}(`{to_str(s1['patch'])}`) and "
                          f"{s2['width']}(`{to_str(s2['patch'])}`), start separation "
-                         f"{(posB - posA) % n}: merged_to_1_run_at={merged_at}, "
+                         f"{sep}: merged_to_1_run_at={merged_at}, "
+                         f"outcome_nruns_at_t={passes}={n_runs_over_time[-1]}, "
                          f"vanished_at={vanished_at}\n")
             lines.append("```")
-            lo, hi = max(0, min(posA, posB) - 15), min(n, max(posA, posB) + 15)
-            for t in range(0, passes + 1, max(1, passes // 40)):
-                lines.append(f"t={t:3d}: {to_str(dev[t][lo:hi])}")
+            sample_ts = list(range(0, passes + 1, max(1, passes // 40)))
+            for t in sample_ts:
+                d = dev[t]
+                runs = all_runs(d)
+                mid = (sum(r[0] for r in runs) // len(runs)) if runs else (posA + posB) // 2
+                lo, hi = (mid - 25) % n, (mid + 25) % n
+                window = d[lo:hi] if lo < hi else d[lo:] + d[:hi]
+                lines.append(f"t={t:3d} nruns={len(runs):2d}: {to_marks(window)}")
             lines.append("```")
 
     with open(OUT_MD, "w") as f:

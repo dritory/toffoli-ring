@@ -18,7 +18,13 @@ Question: does a pair (A, B) admit exact, rejoining macros for FLIP, NEXT, SKIPZ
 
 **Crossing.** A cell crossed by NEXT satisfies the mover's condition at crossing time, and with net zero flips that is its original value. A pair whose only +1 is "move iff cell = v" cannot do exact NEXT over a data cell holding ¬v unless a −1 returns to undo a flip. So conditional +1 needs an encoding with a crossable constant cell in every group.
 
-## 2. Start here: the near-solution
+## 1b. Correction after the first run: compile guarded pairs jointly
+
+Under the strict criterion above (SKIPZ as a standalone macro, every macro skip-safe), the a·R lemma forces a macro's first letter to equal the primitive in its no-skip branches. No letter of the near-solution in §2 is a pure flip or a pure +1, so §2 cannot succeed under the strict criterion. The step 1 search confirmed this: none of 160 configurations produced even one skip-safe primitive.
+
+The strict criterion is stronger than constant-factor compilation needs. Compile "SKIPZ X" jointly as one guarded macro CX. The flag is then internal to macros, every macro starts and ends with the flag clear, and the target set is FLIP, NEXT, PREV, CFLIP (clear if 1), CNEXT, CPREV, the same as §6 but with the skip available inside macros. This guarded criterion is the primary one. The strict criterion is kept as a stronger result: a pair that passes it also compiles the reference program without joint compilation.
+
+## 2. Near-solution (valid under the guarded criterion only)
 
 A = (flip, then +1), B = (−1), no skip, no encoding:
 

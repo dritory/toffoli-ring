@@ -1,3 +1,6 @@
 level 1: |Delta|=6 |Rprev(before)|=6 tried2=30 tried3=30 new=14 total_known=20 time=0.00s
 level 2: |Delta|=14 |Rprev(before)|=20 tried2=266 tried3=2132 new=211 total_known=231 time=0.00s
 level 3: |Delta|=211 |Rprev(before)|=231 tried2=48530 tried3=5486862 new=20450 total_known=20681 time=0.00s
+level 4: |Delta|=20450 |Rprev(before)|=20681 tried2=422906000 tried3=365887654705 new=35919 total_known=56600 time=240.00s [BAILED-timebudget]
+level 5: |Delta|=35919 |Rprev(before)|=56600 tried2=2032979481 tried3=88740669835 new=8936 total_known=65536 time=60.01s [BAILED-timebudget]
+wrote cost table.

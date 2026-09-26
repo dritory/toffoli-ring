@@ -5,3 +5,12 @@ encoding x rest combos: 49
   pair 50/1017  rows=2499  winners=0  elapsed=50.7s
   pair 75/1017  rows=3724  winners=0  elapsed=72.4s
   pair 100/1017  rows=4949  winners=0  elapsed=93.8s
+  pair 125/1017  rows=6174  winners=0  elapsed=119.1s
+  pair 150/1017  rows=7399  winners=0  elapsed=144.3s
+  pair 175/1017  rows=8624  winners=0  elapsed=172.4s
+  pair 200/1017  rows=9849  winners=0  elapsed=199.4s
+  pair 225/1017  rows=11074  winners=0  elapsed=226.6s
+  pair 250/1017  rows=12299  winners=0  elapsed=255.2s
+  pair 275/1017  rows=13524  winners=0  elapsed=281.4s
+  pair 300/1017  rows=14749  winners=0  elapsed=309.2s
+  pair 325/1017  rows=15974  winners=0  elapsed=335.1s
