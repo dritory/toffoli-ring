@@ -8,7 +8,7 @@ Backgrounds are the smallest robust (single-attractor) period-p patterns found i
 Survivors (localized, non-dying) out of 30 perturbations: 22
 
 
-### k=2 bg=`.###` patch width=1 pattern=`#` (max footprint width over 200 passes = 2)
+### k=2 bg=`.###` patch width=1 pattern=`#` (max total footprint over 200 passes = 5, ends as 3 separate run(s))
 
 ```
 t=  0: ##.###.###.###.###.###.###.#######.###.###.###.###.###.###.#
@@ -43,7 +43,7 @@ t= 56: ##.###.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 t= 58: .##.##.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 ```
 
-### k=2 bg=`.###` patch width=2 pattern=`..` (max footprint width over 200 passes = 2)
+### k=2 bg=`.###` patch width=2 pattern=`..` (max total footprint over 200 passes = 5, ends as 3 separate run(s))
 
 ```
 t=  0: ##.###.###.###.###.###.###.###..##.###.###.###.###.###.###.#
@@ -78,7 +78,7 @@ t= 56: ##.###.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 t= 58: .##.##.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 ```
 
-### k=2 bg=`.###` patch width=2 pattern=`#.` (max footprint width over 200 passes = 2)
+### k=2 bg=`.###` patch width=2 pattern=`#.` (max total footprint over 200 passes = 5, ends as 3 separate run(s))
 
 ```
 t=  0: ##.###.###.###.###.###.###.####.##.###.###.###.###.###.###.#
@@ -113,7 +113,7 @@ t= 56: ##.###.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 t= 58: .##.##.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 ```
 
-### k=2 bg=`.###` patch width=2 pattern=`##` (max footprint width over 200 passes = 2)
+### k=2 bg=`.###` patch width=2 pattern=`##` (max total footprint over 200 passes = 5, ends as 3 separate run(s))
 
 ```
 t=  0: ##.###.###.###.###.###.###.#######.###.###.###.###.###.###.#
@@ -148,7 +148,7 @@ t= 56: ##.###.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 t= 58: .##.##.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 ```
 
-### k=2 bg=`.###` patch width=3 pattern=`...` (max footprint width over 200 passes = 2)
+### k=2 bg=`.###` patch width=3 pattern=`...` (max total footprint over 200 passes = 5, ends as 3 separate run(s))
 
 ```
 t=  0: ##.###.###.###.###.###.###.###...#.###.###.###.###.###.###.#
@@ -183,7 +183,7 @@ t= 56: ##.###.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 t= 58: .##.##.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 ```
 
-### k=2 bg=`.###` patch width=3 pattern=`..#` (max footprint width over 200 passes = 2)
+### k=2 bg=`.###` patch width=3 pattern=`..#` (max total footprint over 200 passes = 5, ends as 3 separate run(s))
 
 ```
 t=  0: ##.###.###.###.###.###.###.###..##.###.###.###.###.###.###.#
@@ -218,7 +218,7 @@ t= 56: ##.###.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 t= 58: .##.##.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 ```
 
-### k=2 bg=`.###` patch width=3 pattern=`#..` (max footprint width over 200 passes = 3)
+### k=2 bg=`.###` patch width=3 pattern=`#..` (max total footprint over 200 passes = 5, ends as 3 separate run(s))
 
 ```
 t=  0: ##.###.###.###.###.###.###.####..#.###.###.###.###.###.###.#
@@ -253,7 +253,7 @@ t= 56: ##.###.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 t= 58: .##.##.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 ```
 
-### k=2 bg=`.###` patch width=3 pattern=`#.#` (max footprint width over 200 passes = 2)
+### k=2 bg=`.###` patch width=3 pattern=`#.#` (max total footprint over 200 passes = 5, ends as 3 separate run(s))
 
 ```
 t=  0: ##.###.###.###.###.###.###.####.##.###.###.###.###.###.###.#
@@ -288,7 +288,7 @@ t= 56: ##.###.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 t= 58: .##.##.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 ```
 
-### k=2 bg=`.###` patch width=3 pattern=`##.` (max footprint width over 200 passes = 2)
+### k=2 bg=`.###` patch width=3 pattern=`##.` (max total footprint over 200 passes = 5, ends as 3 separate run(s))
 
 ```
 t=  0: ##.###.###.###.###.###.###.#####.#.###.###.###.###.###.###.#
@@ -323,7 +323,7 @@ t= 56: ##.###.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 t= 58: .##.##.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 ```
 
-### k=2 bg=`.###` patch width=3 pattern=`###` (max footprint width over 200 passes = 2)
+### k=2 bg=`.###` patch width=3 pattern=`###` (max total footprint over 200 passes = 5, ends as 3 separate run(s))
 
 ```
 t=  0: ##.###.###.###.###.###.###.#######.###.###.###.###.###.###.#
@@ -358,7 +358,7 @@ t= 56: ##.###.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 t= 58: .##.##.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 ```
 
-### k=2 bg=`.###` patch width=4 pattern=`....` (max footprint width over 200 passes = 3)
+### k=2 bg=`.###` patch width=4 pattern=`....` (max total footprint over 200 passes = 5, ends as 3 separate run(s))
 
 ```
 t=  0: ##.###.###.###.###.###.###.###.....###.###.###.###.###.###.#
@@ -393,7 +393,7 @@ t= 56: ##.###.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 t= 58: .##.##.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 ```
 
-### k=2 bg=`.###` patch width=4 pattern=`...#` (max footprint width over 200 passes = 2)
+### k=2 bg=`.###` patch width=4 pattern=`...#` (max total footprint over 200 passes = 5, ends as 3 separate run(s))
 
 ```
 t=  0: ##.###.###.###.###.###.###.###...#.###.###.###.###.###.###.#
@@ -428,7 +428,7 @@ t= 56: ##.###.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 t= 58: .##.##.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 ```
 
-### k=2 bg=`.###` patch width=4 pattern=`..#.` (max footprint width over 200 passes = 2)
+### k=2 bg=`.###` patch width=4 pattern=`..#.` (max total footprint over 200 passes = 5, ends as 3 separate run(s))
 
 ```
 t=  0: ##.###.###.###.###.###.###.###..#..###.###.###.###.###.###.#
@@ -463,7 +463,7 @@ t= 56: ##.###.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 t= 58: .##.##.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 ```
 
-### k=2 bg=`.###` patch width=4 pattern=`..##` (max footprint width over 200 passes = 2)
+### k=2 bg=`.###` patch width=4 pattern=`..##` (max total footprint over 200 passes = 5, ends as 3 separate run(s))
 
 ```
 t=  0: ##.###.###.###.###.###.###.###..##.###.###.###.###.###.###.#
@@ -498,7 +498,7 @@ t= 56: ##.###.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 t= 58: .##.##.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 ```
 
-### k=2 bg=`.###` patch width=4 pattern=`#...` (max footprint width over 200 passes = 4)
+### k=2 bg=`.###` patch width=4 pattern=`#...` (max total footprint over 200 passes = 5, ends as 3 separate run(s))
 
 ```
 t=  0: ##.###.###.###.###.###.###.####....###.###.###.###.###.###.#
@@ -533,7 +533,7 @@ t= 56: ##.###.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 t= 58: .##.##.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 ```
 
-### k=2 bg=`.###` patch width=4 pattern=`#..#` (max footprint width over 200 passes = 3)
+### k=2 bg=`.###` patch width=4 pattern=`#..#` (max total footprint over 200 passes = 5, ends as 3 separate run(s))
 
 ```
 t=  0: ##.###.###.###.###.###.###.####..#.###.###.###.###.###.###.#
@@ -568,7 +568,7 @@ t= 56: ##.###.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 t= 58: .##.##.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 ```
 
-### k=2 bg=`.###` patch width=4 pattern=`#.#.` (max footprint width over 200 passes = 2)
+### k=2 bg=`.###` patch width=4 pattern=`#.#.` (max total footprint over 200 passes = 5, ends as 3 separate run(s))
 
 ```
 t=  0: ##.###.###.###.###.###.###.####.#..###.###.###.###.###.###.#
@@ -603,7 +603,7 @@ t= 56: ##.###.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 t= 58: .##.##.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 ```
 
-### k=2 bg=`.###` patch width=4 pattern=`#.##` (max footprint width over 200 passes = 2)
+### k=2 bg=`.###` patch width=4 pattern=`#.##` (max total footprint over 200 passes = 5, ends as 3 separate run(s))
 
 ```
 t=  0: ##.###.###.###.###.###.###.####.##.###.###.###.###.###.###.#
@@ -638,7 +638,7 @@ t= 56: ##.###.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 t= 58: .##.##.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 ```
 
-### k=2 bg=`.###` patch width=4 pattern=`##..` (max footprint width over 200 passes = 2)
+### k=2 bg=`.###` patch width=4 pattern=`##..` (max total footprint over 200 passes = 5, ends as 3 separate run(s))
 
 ```
 t=  0: ##.###.###.###.###.###.###.#####...###.###.###.###.###.###.#
@@ -673,7 +673,7 @@ t= 56: ##.###.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 t= 58: .##.##.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 ```
 
-### k=2 bg=`.###` patch width=4 pattern=`##.#` (max footprint width over 200 passes = 2)
+### k=2 bg=`.###` patch width=4 pattern=`##.#` (max total footprint over 200 passes = 5, ends as 3 separate run(s))
 
 ```
 t=  0: ##.###.###.###.###.###.###.#####.#.###.###.###.###.###.###.#
@@ -708,7 +708,7 @@ t= 56: ##.###.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 t= 58: .##.##.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 ```
 
-### k=2 bg=`.###` patch width=4 pattern=`###.` (max footprint width over 200 passes = 2)
+### k=2 bg=`.###` patch width=4 pattern=`###.` (max total footprint over 200 passes = 5, ends as 3 separate run(s))
 
 ```
 t=  0: ##.###.###.###.###.###.###.######..###.###.###.###.###.###.#
@@ -743,7 +743,7 @@ t= 56: ##.###.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 t= 58: .##.##.###.###.###.###.###.###.###.###.###.###.###.###.###.#
 ```
 
-### k=2 bg=`.###` patch width=4 pattern=`####` (max footprint width over 200 passes = 2)
+### k=2 bg=`.###` patch width=4 pattern=`####` (max total footprint over 200 passes = 5, ends as 3 separate run(s))
 
 ```
 t=  0: ##.###.###.###.###.###.###.#######.###.###.###.###.###.###.#
@@ -788,7 +788,7 @@ Survivors (localized, non-dying) out of 30 perturbations: 0
 Survivors (localized, non-dying) out of 30 perturbations: 15
 
 
-### k=4 bg=`..####` patch width=1 pattern=`#` (max footprint width over 200 passes = 1)
+### k=4 bg=`..####` patch width=1 pattern=`#` (max total footprint over 200 passes = 2, ends as 1 separate run(s))
 
 ```
 t=  0: ..####..####..####..####..#####.####..####..####..####..####
@@ -823,7 +823,7 @@ t= 56: ..####..####..####..####..####..####..####..####..####..####
 t= 58: ..####..####..####..####..####..####..####..####..####..####
 ```
 
-### k=4 bg=`..####` patch width=2 pattern=`#.` (max footprint width over 200 passes = 1)
+### k=4 bg=`..####` patch width=2 pattern=`#.` (max total footprint over 200 passes = 2, ends as 1 separate run(s))
 
 ```
 t=  0: ..####..####..####..####..#####.####..####..####..####..####
@@ -858,7 +858,7 @@ t= 56: ..####..####..####..####..####..####..####..####..####..####
 t= 58: ..####..####..####..####..####..####..####..####..####..####
 ```
 
-### k=4 bg=`..####` patch width=2 pattern=`##` (max footprint width over 200 passes = 2)
+### k=4 bg=`..####` patch width=2 pattern=`##` (max total footprint over 200 passes = 2, ends as 1 separate run(s))
 
 ```
 t=  0: ..####..####..####..####..##########..####..####..####..####
@@ -893,7 +893,7 @@ t= 56: ..####..####..####..####..####..####..####..####..####..####
 t= 58: ..####..####..####..####..####..####..####..####..####..####
 ```
 
-### k=4 bg=`..####` patch width=3 pattern=`#..` (max footprint width over 200 passes = 1)
+### k=4 bg=`..####` patch width=3 pattern=`#..` (max total footprint over 200 passes = 2, ends as 1 separate run(s))
 
 ```
 t=  0: ..####..####..####..####..#####..###..####..####..####..####
@@ -928,7 +928,7 @@ t= 56: ..####..####..####..####..####..####..####..####..####..####
 t= 58: ..####..####..####..####..####..####..####..####..####..####
 ```
 
-### k=4 bg=`..####` patch width=3 pattern=`#.#` (max footprint width over 200 passes = 1)
+### k=4 bg=`..####` patch width=3 pattern=`#.#` (max total footprint over 200 passes = 2, ends as 1 separate run(s))
 
 ```
 t=  0: ..####..####..####..####..#####.####..####..####..####..####
@@ -963,7 +963,7 @@ t= 56: ..####..####..####..####..####..####..####..####..####..####
 t= 58: ..####..####..####..####..####..####..####..####..####..####
 ```
 
-### k=4 bg=`..####` patch width=3 pattern=`##.` (max footprint width over 200 passes = 3)
+### k=4 bg=`..####` patch width=3 pattern=`##.` (max total footprint over 200 passes = 3, ends as 1 separate run(s))
 
 ```
 t=  0: ..####..####..####..####..######.###..####..####..####..####
@@ -998,7 +998,7 @@ t= 56: ..####..####..####..####..####..####..####..####..####..####
 t= 58: ..####..####..####..####..####..####..####..####..####..####
 ```
 
-### k=4 bg=`..####` patch width=3 pattern=`###` (max footprint width over 200 passes = 2)
+### k=4 bg=`..####` patch width=3 pattern=`###` (max total footprint over 200 passes = 2, ends as 1 separate run(s))
 
 ```
 t=  0: ..####..####..####..####..##########..####..####..####..####
@@ -1033,7 +1033,7 @@ t= 56: ..####..####..####..####..####..####..####..####..####..####
 t= 58: ..####..####..####..####..####..####..####..####..####..####
 ```
 
-### k=4 bg=`..####` patch width=4 pattern=`#...` (max footprint width over 200 passes = 1)
+### k=4 bg=`..####` patch width=4 pattern=`#...` (max total footprint over 200 passes = 3, ends as 1 separate run(s))
 
 ```
 t=  0: ..####..####..####..####..#####...##..####..####..####..####
@@ -1068,7 +1068,7 @@ t= 56: ..####..####..####..####..####..####..####..####..####..####
 t= 58: ..####..####..####..####..####..####..####..####..####..####
 ```
 
-### k=4 bg=`..####` patch width=4 pattern=`#..#` (max footprint width over 200 passes = 1)
+### k=4 bg=`..####` patch width=4 pattern=`#..#` (max total footprint over 200 passes = 2, ends as 1 separate run(s))
 
 ```
 t=  0: ..####..####..####..####..#####..###..####..####..####..####
@@ -1103,7 +1103,7 @@ t= 56: ..####..####..####..####..####..####..####..####..####..####
 t= 58: ..####..####..####..####..####..####..####..####..####..####
 ```
 
-### k=4 bg=`..####` patch width=4 pattern=`#.#.` (max footprint width over 200 passes = 1)
+### k=4 bg=`..####` patch width=4 pattern=`#.#.` (max total footprint over 200 passes = 2, ends as 1 separate run(s))
 
 ```
 t=  0: ..####..####..####..####..#####.#.##..####..####..####..####
@@ -1138,7 +1138,7 @@ t= 56: ..####..####..####..####..####..####..####..####..####..####
 t= 58: ..####..####..####..####..####..####..####..####..####..####
 ```
 
-### k=4 bg=`..####` patch width=4 pattern=`#.##` (max footprint width over 200 passes = 1)
+### k=4 bg=`..####` patch width=4 pattern=`#.##` (max total footprint over 200 passes = 2, ends as 1 separate run(s))
 
 ```
 t=  0: ..####..####..####..####..#####.####..####..####..####..####
@@ -1173,7 +1173,7 @@ t= 56: ..####..####..####..####..####..####..####..####..####..####
 t= 58: ..####..####..####..####..####..####..####..####..####..####
 ```
 
-### k=4 bg=`..####` patch width=4 pattern=`##..` (max footprint width over 200 passes = 4)
+### k=4 bg=`..####` patch width=4 pattern=`##..` (max total footprint over 200 passes = 4, ends as 1 separate run(s))
 
 ```
 t=  0: ..####..####..####..####..######..##..####..####..####..####
@@ -1208,7 +1208,7 @@ t= 56: ..####..####..####..####..####..####..####..####..####..####
 t= 58: ..####..####..####..####..####..####..####..####..####..####
 ```
 
-### k=4 bg=`..####` patch width=4 pattern=`##.#` (max footprint width over 200 passes = 3)
+### k=4 bg=`..####` patch width=4 pattern=`##.#` (max total footprint over 200 passes = 3, ends as 1 separate run(s))
 
 ```
 t=  0: ..####..####..####..####..######.###..####..####..####..####
@@ -1243,7 +1243,7 @@ t= 56: ..####..####..####..####..####..####..####..####..####..####
 t= 58: ..####..####..####..####..####..####..####..####..####..####
 ```
 
-### k=4 bg=`..####` patch width=4 pattern=`###.` (max footprint width over 200 passes = 2)
+### k=4 bg=`..####` patch width=4 pattern=`###.` (max total footprint over 200 passes = 3, ends as 1 separate run(s))
 
 ```
 t=  0: ..####..####..####..####..#######.##..####..####..####..####
@@ -1278,7 +1278,7 @@ t= 56: ..####..####..####..####..####..####..####..####..####..####
 t= 58: ..####..####..####..####..####..####..####..####..####..####
 ```
 
-### k=4 bg=`..####` patch width=4 pattern=`####` (max footprint width over 200 passes = 2)
+### k=4 bg=`..####` patch width=4 pattern=`####` (max total footprint over 200 passes = 2, ends as 1 separate run(s))
 
 ```
 t=  0: ..####..####..####..####..##########..####..####..####..####

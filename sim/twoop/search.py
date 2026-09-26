@@ -22,6 +22,7 @@ A branch that ever pushes the pointer outside the window is pruned (and so
 is every extension of that word).
 """
 
+import itertools
 from typing import Optional
 
 from machine import step, SKIP
@@ -43,43 +44,44 @@ def flag_reachable(bundleA, bundleB):
     return any(o.kind == SKIP for o in bundleA.ops) or any(o.kind == SKIP for o in bundleB.ops)
 
 
-def build_window(g, template, xl, xc, xr):
-    left = template(xl)
-    cur = template(xc)
-    right = template(xr)
-    return list(left) + list(cur) + list(right)
+def build_window(g, template, xs):
+    """xs: logical bit for each group, left to right (odd length, middle
+    entry is the current group)."""
+    cells = []
+    for x in xs:
+        cells.extend(template(x))
+    return cells
 
 
 def search_pair(bundleA, bundleB, g, template, rest, L,
                  want=("FLIP", "NEXT", "PREV", "SKIPZ"),
-                 collect_identities=False, max_identities=5):
+                 collect_identities=False, max_identities=5, half_width=1):
     """Returns dict primitive -> (word_string, length) or None, plus a list
-    of identity words found (word_string) up to max_identities, plus a flag
-    saying whether the whole word-tree was exhausted without any OOB issue
-    at length L (for bookkeeping)."""
+    of identity words found (word_string) up to max_identities.
 
-    W = 3 * g
-    ptr0 = g + rest
-    combos = [(xl, xc, xr) for xl in (0, 1) for xc in (0, 1) for xr in (0, 1)]
+    half_width: number of full context groups on each side of the current
+    group (1 = the base spec's "group plus one group each side"; 2 = the
+    wider ±2-group rerun). Window = (2*half_width+1) groups; a branch that
+    ever pushes the pointer outside this window is pruned, and so is every
+    extension of that word."""
+
+    ngroups = 2 * half_width + 1
+    ptr0 = half_width * g + rest
+    cur_slot = half_width  # index of the current group within a combo tuple
+    combos = list(itertools.product((0, 1), repeat=ngroups))
     flag_ok = flag_reachable(bundleA, bundleB)
-
-    # initial states: for each combo, for each flag_in in (0,1)
-    inits = []
-    for (xl, xc, xr) in combos:
-        win = build_window(g, template, xl, xc, xr)
-        inits.append((win, ptr0, 0, (xl, xc, xr)))   # flag_in = 0
-        inits.append((win, ptr0, 1, (xl, xc, xr)))   # flag_in = 1
 
     letters = {"A": bundleA, "B": bundleB}
 
     found = {p: None for p in want}
     identities = []
 
-    init_wins = [build_window(g, template, xl, xc, xr) for (xl, xc, xr) in combos]
+    init_wins = [build_window(g, template, xs) for xs in combos]
 
     root_states = []
-    for (win, p0, fin, combo) in inits:
-        root_states.append((list(win), p0, fin, True))
+    for win in init_wins:
+        root_states.append((list(win), ptr0, 0, True))   # flag_in = 0
+        root_states.append((list(win), ptr0, 1, True))   # flag_in = 1
 
     def check(word_str, states):
         # Each primitive must hold across ALL combos independently; one
@@ -91,7 +93,8 @@ def search_pair(bundleA, bundleB, g, template, rest, L,
             return
         still_ok = {p: True for p in pending}
 
-        for idx, (xl, xc, xr) in enumerate(combos):
+        for idx, xs in enumerate(combos):
+            xc = xs[cur_slot]
             s0 = states[2 * idx]      # flag_in = 0
             s1 = states[2 * idx + 1]  # flag_in = 1
             w0, p0f, f0f, ok0 = s0
@@ -112,10 +115,9 @@ def search_pair(bundleA, bundleB, g, template, rest, L,
                     continue
                 ok = False
                 if prim == "FLIP":
-                    left = init_win[:g]
-                    right = init_win[2 * g:]
-                    cur_expected = list(template(1 - xc))
-                    expected = left + cur_expected + right
+                    cur_start = cur_slot * g
+                    expected = list(init_win)
+                    expected[cur_start:cur_start + g] = list(template(1 - xc))
                     ok = (w0 == expected and p0f == ptr0 and f0f == 0)
                 elif prim == "NEXT":
                     ok = (w0 == init_win and p0f == ptr0 + g and f0f == 0)

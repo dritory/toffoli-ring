@@ -1,3 +1,7 @@
 canonical pairs: 1017
 encoding x rest combos: 49
   pair 0/1017  rows=49  winners=0  elapsed=0.9s
+  pair 25/1017  rows=1274  winners=0  elapsed=30.3s
+  pair 50/1017  rows=2499  winners=0  elapsed=50.7s
+  pair 75/1017  rows=3724  winners=0  elapsed=72.4s
+  pair 100/1017  rows=4949  winners=0  elapsed=93.8s

@@ -77,7 +77,7 @@ def local_shift(rowA, rowB, center, halfwin=6, search=15):
     return best_r, best_err
 
 
-def measure_background_velocity(k, pat, copies=60, passes=30):
+def measure_background_velocity(k, pat, copies=300, passes=8):
     p = len(pat)
     n = copies * p
     bg = run(pat * copies, k, passes)
@@ -132,9 +132,9 @@ def main():
 
     for k, pat in BACKGROUNDS.items():
         p = len(pat)
-        copies = 80
-        n = copies * p
-        passes = 200
+        copies = 600  # large ring: keeps the ring's own forced boundary kink
+        n = copies * p  # (see module docstring) far from the injected defect
+        passes = 200  # for the whole 200-pass test window
         v, bg = measure_background_velocity(k, pat)
         lines.append(f"\n## k={k}, background pattern `{to_str(pat)}` (p={p}), "
                       f"N={n}, measured per-pass shift v={v}\n")
@@ -152,12 +152,13 @@ def main():
                     continue  # not actually a perturbation
                 rows = run(s, k, passes)
                 dev = diff(rows, bg)
-                max_w, alive_end, positions = classify_and_track(dev, n, center)
-                localized = (max_w <= 40) and alive_end
+                stats = classify_and_track(dev, n, center)
+                localized = stats["bounded"] and stats["alive_end"]
                 if localized:
-                    survivors.append(dict(width=w, patch=tuple(patch), max_w=max_w,
-                                           positions=positions, rows=rows, bg=bg,
-                                           dev=dev))
+                    survivors.append(dict(width=w, patch=tuple(patch),
+                                           max_w=stats["max_total"],
+                                           final_nruns=stats["final_nruns"],
+                                           rows=rows, bg=bg, dev=dev))
         print(f"  survivors: {len(survivors)} / 30 perturbations")
         survivors_by_k[k] = dict(v=v, n=n, p=p, pat=pat, survivors=survivors, bg=bg,
                                   copies=copies, center=center, passes=passes)
@@ -167,8 +168,9 @@ def main():
         for surv in survivors:
             w, patch = surv["width"], surv["patch"]
             lines.append(f"\n### k={k} bg=`{to_str(pat)}` patch width={w} "
-                          f"pattern=`{to_str(patch)}` (max footprint width over "
-                          f"200 passes = {surv['max_w']})\n")
+                          f"pattern=`{to_str(patch)}` (max total footprint over "
+                          f"200 passes = {surv['max_w']}, ends as {surv['final_nruns']} "
+                          f"separate run(s))\n")
             lines.append("```")
             cm = comoving(surv["rows"], v, n)
             lo, hi = max(0, center - 30), min(n, center + 30)

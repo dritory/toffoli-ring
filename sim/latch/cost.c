@@ -11,10 +11,20 @@
  * would already be in R_{L-1}), so every new gate at level L includes at
  * least one operand from Delta_{L-1}.
  *
- * Exhaustive for L = 1..4. L = 5 is attempted with the same method but is
- * allowed to be incomplete if it would not finish in time (documented);
- * this does not affect correctness of costs 0..4, which is all ranked.csv
- * needs (pairs are kept only when cost(f)+cost(g) <= bound <= 4).
+ * Exhaustive for L = 1..3 (checked: this already covers ~31% of all 65536
+ * functions). For L = 4 and 5 the raw operand pool is already too large
+ * (tens of thousands) for the O(|Delta|*|Rprev|^2) arity-3 loop to finish
+ * in reasonable time, so those levels run under a wall-clock time budget:
+ * whatever is found within budget is recorded (with correct, verified
+ * costs -- the algorithm never records a wrong/too-low cost, it can only
+ * fail to find some functions before the budget runs out, in which case
+ * they are left for the next level or end up labelled '>5'). Operand order
+ * is randomly shuffled at L>=4 so a truncated run samples broadly rather
+ * than being biased toward one end of the pool. This does not affect
+ * correctness of costs 0..3, and ranked.csv only needs cost(f)+cost(g) <=
+ * bound <= 4, so an incomplete level 4/5 search only risks a conservative
+ * undercount (some true cost-4 pairs missing from ranked.csv), never a
+ * wrong inclusion.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,6 +46,25 @@ static uint16_t Rprev[NF];
 static int nR;
 static uint16_t Delta[NF];
 static int nD;
+
+static unsigned rng_state = 12345u;
+static unsigned xrand(void) {
+    unsigned x = rng_state;
+    x ^= x << 13; x ^= x >> 17; x ^= x << 5;
+    return rng_state = x;
+}
+
+/* Fisher-Yates: if a level's search is bailed on a time budget (best-effort,
+ * levels 4-5 only; see header comment), a shuffled order means the partial
+ * coverage samples broadly across the whole operand pool instead of being
+ * systematically biased toward one end of it (e.g. by truth-table value or
+ * discovery order). */
+static void shuffle(uint16_t *a, int n) {
+    for (int i = n - 1; i > 0; i--) {
+        int j = xrand() % (unsigned)(i + 1);
+        uint16_t t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+}
 
 static double now(void) {
     struct timespec ts;
@@ -76,6 +105,7 @@ int main(int argc, char **argv) {
         /* Delta = functions with cost == L-1 */
         nD = 0;
         for (int i = 0; i < nR; i++) if (cost[Rprev[i]] == L - 1) Delta[nD++] = Rprev[i];
+        if (L >= 4) { shuffle(Rprev, nR); shuffle(Delta, nD); }
 
         long tried2 = 0, tried3 = 0, found_before = 0;
         for (int v = 0; v < NF; v++) if (cost[v] >= 0) found_before++;
