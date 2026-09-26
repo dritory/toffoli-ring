@@ -20,3 +20,4 @@ sim/latch/interact.csv
 sim/latch/test_pairs.txt
 sim/latch/test_vac.csv
 sim/latch/bij
+sim/twoop_stateless/complete_search
