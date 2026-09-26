@@ -3,3 +3,12 @@ no -1 subspace pairs: 2550
   pair 200/2550  elapsed=44.8s
   pair 400/2550  elapsed=69.9s
   pair 600/2550  elapsed=110.0s
+  pair 800/2550  elapsed=146.4s
+  pair 1000/2550  elapsed=192.7s
+  pair 1200/2550  elapsed=221.4s
+  pair 1400/2550  elapsed=245.9s
+  pair 1600/2550  elapsed=272.8s
+  pair 1800/2550  elapsed=308.3s
+  pair 2000/2550  elapsed=345.9s
+  pair 2200/2550  elapsed=381.8s
+  pair 2400/2550  elapsed=420.3s

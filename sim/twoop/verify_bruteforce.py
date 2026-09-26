@@ -111,6 +111,61 @@ def verify(name, opsA, opsB, g, template, rest, macros, n_groups=12, n_random=10
     return results
 
 
+def verify_guarded(opsA, opsB, g, template, rest, macros, n_groups=12, n_random=1000, seed=12345):
+    """Guarded-macro criterion (flag_in=0 only). macros: dict target ->
+    word string, target in {FLIP,NEXT,PREV,CFLIP,CNEXT,CPREV}. Every branch
+    must end with flag_out=0; CFLIP always decodes to template(0); CNEXT
+    (resp. CPREV) moves +g (resp. -g) iff the current group's bit is 1,
+    else does not move."""
+    rng = random.Random(seed)
+    n = n_groups * g
+
+    results = {}
+    for prim, word in macros.items():
+        ok_count = 0
+        fail_examples = []
+        for trial in range(n_random):
+            xs = [rng.randint(0, 1) for _ in range(n_groups)]
+            group0 = rng.randrange(n_groups)
+            tape = []
+            for x in xs:
+                tape.extend(template(x))
+            pos0 = group0 * g + rest
+            xc = xs[group0]
+
+            tape_copy = list(tape)
+            tape_out, pos_out, flag_out = run_macro(word, opsA, opsB, tape_copy, pos0, 0, n)
+
+            if prim == "FLIP":
+                expected = list(tape)
+                expected[group0 * g:group0 * g + g] = list(template(1 - xc))
+                good = (tape_out == expected and pos_out == pos0 and flag_out == 0)
+            elif prim == "NEXT":
+                good = (tape_out == tape and pos_out == (pos0 + g) % n and flag_out == 0)
+            elif prim == "PREV":
+                good = (tape_out == tape and pos_out == (pos0 - g) % n and flag_out == 0)
+            elif prim == "CFLIP":
+                expected = list(tape)
+                expected[group0 * g:group0 * g + g] = list(template(0))
+                good = (tape_out == expected and pos_out == pos0 and flag_out == 0)
+            elif prim == "CNEXT":
+                want_pos = (pos0 + g) % n if xc == 1 else pos0
+                good = (tape_out == tape and pos_out == want_pos and flag_out == 0)
+            elif prim == "CPREV":
+                want_pos = (pos0 - g) % n if xc == 1 else pos0
+                good = (tape_out == tape and pos_out == want_pos and flag_out == 0)
+            else:
+                raise ValueError(prim)
+
+            if good:
+                ok_count += 1
+            else:
+                if len(fail_examples) < 3:
+                    fail_examples.append((xs, group0, tape_out, pos_out, flag_out))
+        results[prim] = (ok_count, n_random, fail_examples)
+    return results
+
+
 if __name__ == "__main__":
     print("This module is meant to be imported/parameterized once a winner "
           "is found by the exhaustive search. See generate_reports.py for "

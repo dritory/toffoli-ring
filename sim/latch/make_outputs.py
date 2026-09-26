@@ -57,10 +57,53 @@ def load_vacuum():
     return best
 
 
+import re
+
+_EX_RE = re.compile(r",(\d+/\d+,\d+/\d+,d=\d+)$")
+
+
+def _parse_interact_line(line):
+    """dynamics.c's interact CSV has two fields (glider_examples,
+    example_dependent) that contain un-escaped internal commas, so a plain
+    csv split misaligns columns. Parse from both ends instead: the first 7
+    fields (f_hex,g_hex,label,k,qstart,vac_period,n_gliders) are comma-free,
+    and the trailing example_dependent field matches a known shape."""
+    line = line.rstrip("\n")
+    left, rest = line.split(",", 6)[:6], line.split(",", 6)[6]
+    f_hex, g_hex, label, k, qstart, vac_period = left
+    m = _EX_RE.search(rest)
+    if m:
+        example_dependent = m.group(1)
+        rest = rest[: m.start()]
+    else:
+        example_dependent = ""
+        if rest.endswith(","):
+            rest = rest[:-1]
+    # rest is now: n_gliders,glider_examples,n_interact_tested,n_interact_dependent
+    n_gliders, rest2 = rest.split(",", 1)
+    n_dependent_str, rest2 = rest2[::-1].split(",", 1)
+    n_dependent = n_dependent_str[::-1]
+    rest2 = rest2[::-1]
+    n_tested_str, glider_examples = rest2[::-1].split(",", 1)
+    n_tested = n_tested_str[::-1]
+    glider_examples = glider_examples[::-1]
+    return {
+        "f_hex": f_hex, "g_hex": g_hex, "label": label, "k": k,
+        "qstart": qstart, "vac_period": vac_period, "n_gliders": n_gliders,
+        "glider_examples": glider_examples, "n_interact_tested": n_tested,
+        "n_interact_dependent": n_dependent, "example_dependent": example_dependent,
+    }
+
+
 def load_interact():
     d = {}
     with open(INTERACT) as f:
-        for r in csv.DictReader(f):
+        header = f.readline()
+        assert header.startswith("f_hex"), header
+        for line in f:
+            if not line.strip():
+                continue
+            r = _parse_interact_line(line)
             key = (r["f_hex"], r["g_hex"], r["k"])
             d[key] = r
     return d
