@@ -7,6 +7,7 @@ Is the sequential Toffoli ring `s[i+k] ^= s[i] & s[i+1]` (i = 0..N-1, sequential
 * `PLAN.md` — NAND ring: dead in every one-NAND tap geometry; the three-input fix and its sweep tasks.
 * `HANDOVER-A.md` — drum with one bit of head state.
 * `HANDOVER-B.md` — two-instruction pointer machines.
+* `HANDOVER-D.md` — the 4-, 8-, 16- and 32-transistor computers.
 * `sim/` — simulator (`ring.py`), exact cycle enumerator (`cycles.c`), sampled periods (`sample.c`), word catalogs, background search, seed patterns.
 * `results/` — raw sweep output, word classifications, `seeds.md` (spacetime diagrams of every structure mentioned).
 
