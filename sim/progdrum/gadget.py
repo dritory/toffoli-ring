@@ -274,6 +274,7 @@ def classify_localized(background, prog_full, k, M, P, flip_positions, n_rows,
     centers = []
     raw_center_prev = None
     unwrapped = 0.0
+    start_center = None
     died_at = None
 
     overflowed = False
@@ -291,6 +292,7 @@ def classify_localized(background, prog_full, k, M, P, flip_positions, n_rows,
             break
         if raw_center_prev is None:
             unwrapped = center
+            start_center = center
         else:
             delta = center - raw_center_prev
             if delta > M / 2:
@@ -301,11 +303,13 @@ def classify_localized(background, prog_full, k, M, P, flip_positions, n_rows,
         raw_center_prev = center
         centers.append(unwrapped)
         tail.append(tuple(d))
-        # early exit: once it has spread past the window or drifted away,
-        # it cannot become "localized" by the definition below -- no need
-        # to burn the remaining rows (this is what makes an exhaustive
-        # 2-4 bit injection sweep over a 2P window affordable).
-        if width > window or abs(unwrapped) > 2 * window:
+        # early exit: once it has spread past the window or drifted away
+        # from where it started, it cannot become "localized" by the
+        # definition below -- no need to burn the remaining rows (this is
+        # what makes an exhaustive 2-4 bit injection sweep over a 2P
+        # window affordable). Drift is measured from the START position,
+        # not from zero.
+        if width > window or abs(unwrapped - start_center) > 2 * window:
             overflowed = True
             break
 
