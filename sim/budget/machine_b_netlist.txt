@@ -1,0 +1,94 @@
+MACHINE B -- reference 4-op machine (FLIP, NEXT, PREV, SKIPZ)
+Same component-count rule as machine_a_netlist.txt: every transistor
+(NMOS or PMOS, each an ordinary MOSFET, each 1 component), diode,
+resistor and capacitor counts. Two non-overlapping clock phases
+(phi_eval, phi_write) from the drive, not counted.
+
+STATE VARIABLE
+  S = flagbar ("execute enabled this tick"), on capacitor C_S. S is used
+  ONLY as a transistor gate everywhere below (non-destructive read).
+
+PRIMARY INPUTS (free)
+  b1,b1bar,b0,b0bar : opcode, dual rail, from program memory.
+                       encoding: FLIP=00 NEXT=01 PREV=10 SKIPZ=11.
+  r                 : read bit, single rail, from data memory (no
+                       complement is offered -- Machine B needs no
+                       dual-rail tape, unlike Machine A, but SKIPZ does
+                       need to test r==0, see below).
+  phi_eval, phi_write
+
+COMPONENTS (16 total: 11 transistors, 4 resistors, 1 capacitor, 0 diodes)
+
+  Shared switch:
+    T1 (T_S)  gate=S     a=K   b=GND                       [NMOS]
+
+  is_FLIP chain -> TOGGLE_N = NAND(S, b1bar, b0bar):
+    T2  gate=b1bar  a=TOGGLE_N  b=N_tog1                   [NMOS]
+    T3  gate=b0bar  a=N_tog1    b=K                         [NMOS]
+    R1  TOGGLE_N -> VDD
+
+  is_NEXT chain -> MOVE_P_N = NAND(S, b1bar, b0):
+    T4  gate=b1bar  a=MOVE_P_N  b=N_mp1                    [NMOS]
+    T5  gate=b0     a=N_mp1     b=K                         [NMOS]
+    R2  MOVE_P_N -> VDD
+
+  is_PREV chain -> MOVE_M_N = NAND(S, b1, b0bar):
+    T6  gate=b1     a=MOVE_M_N  b=N_mm1                    [NMOS]
+    T7  gate=b0bar  a=N_mm1     b=K                         [NMOS]
+    R3  MOVE_M_N -> VDD
+
+  is_SKIPZ & (r==0) chain -> DNODE = NAND(S, b1, b0, NOT r):
+    T8  gate=b1     a=DNODE   b=N_d1                        [NMOS]
+    T9  gate=b0     a=N_d1    b=N_d2                        [NMOS]
+    T10 gate=r      a=N_d2    b=K       [PMOS -- conducts when r=0,
+                                          this is how "r==0" is tested
+                                          without a separate inverter:
+                                          a PMOS is a normal MOSFET,
+                                          still 1 component, just gated
+                                          the opposite way round.]
+    R4  DNODE -> VDD
+
+  Write-back (phi_write):
+    T11 (M_write)  gate=phi_write  a=DNODE  b=(C_S node)     [NMOS]
+    C1  (C_S) capacitor holding S.
+
+OUTPUT STROBES (polarity stated; memory side matches)
+  toggle strobe = NOT(TOGGLE_N) = S & is_FLIP
+  move+  strobe = NOT(MOVE_P_N) = S & is_NEXT
+  move-  strobe = NOT(MOVE_M_N) = S & is_PREV
+  S_next (written to C_S) = DNODE directly (already the correct new
+    stored value: S_next = NAND(S, is_SKIPZ, NOT r), matching
+    flag_next = flagbar . is_SKIPZ . (r==0), flagbar=S).
+
+TIMING: identical structure to Machine A (see machine_a_netlist.txt):
+  phi_eval settles TOGGLE_N/MOVE_P_N/MOVE_M_N/DNODE from the OLD S (T11
+  is off, so S is stable all through phi_eval); r is sampled here, before
+  the memory (excluded) performs any toggle triggered by this tick's
+  toggle strobe. phi_write closes T11, writing DNODE into C_S for tick
+  t+1. No feedback (S, opcode bits and r are all primary or
+  previous-tick-stable), so evaluation is a single settling pass, a
+  trivial fixed point.
+
+WHERE THE COMPONENTS GO
+  latch (state):          C1 + T11         = 2
+  shared read switch:      T1               = 1
+  decode/strobe switches:  T2..T9 (8) + T10 (the r==0 PMOS) = 9
+  pull-ups:                R1..R4           = 4
+  inverters:                none needed (the PMOS on r replaces what
+                           would otherwise be a dedicated rbar
+                           inverter transistor + its pull-up resistor)
+
+WHY IT COSTS MORE THAN MACHINE A: SKIPZ must test r==0. Machine A never
+needs a complement of r (nf = flagbar & r, used directly), because its
+tape is dual-rail; Machine B does not need a dual-rail tape for anything
+else, but SKIPZ's condition is inherently a test against 0, and a
+switch/diode network can only test "conducts on r high" or "on r low"
+per device -- testing the low condition needs either an inverter (2
+components: 1 transistor + 1 resistor) or, as done here, a PMOS wired to
+be gated directly by r (0 extra components beyond the transistor already
+needed in that chain position). Either way this is one more physical
+test than Machine A ever needs, on top of the extra opcode-decode
+transistors that a 4-instruction ISA needs versus a 1-bit opcode.
+
+TOTAL: 16 components (11 transistors, 4 resistors, 1 capacitor, 0
+diodes).
