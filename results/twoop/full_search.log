@@ -16,3 +16,4 @@ encoding x rest combos: 49
   pair 325/1017  rows=15974  winners=0  elapsed=335.1s
   pair 350/1017  rows=17199  winners=0  elapsed=364.9s
   pair 375/1017  rows=18424  winners=0  elapsed=393.2s
+  pair 400/1017  rows=19649  winners=0  elapsed=416.7s
