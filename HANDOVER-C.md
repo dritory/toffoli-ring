@@ -38,6 +38,10 @@ Useful facts for block design:
 * A value leaves a gate at site x and is captured next row by the copy site at x−1, if x−1 is a copy site. That is the only way a gate output survives a row.
 * Constants: a copy chain fed by NAND(y, NOT y) regenerates 1s; keep a constant rail per block if the design needs it.
 
+## 2b. Correction after the gadget search
+
+The sketch in §2 assumed left-moving data flows freely along copy chains. It does not: a copy site at x reads x+1, and a gate site reads only to its left, so data arriving from the right stops at the first gate site. It continues only if gates to its right pick it up and re-emit it, which sends it rightward. Measured with s = 1 (N = mP − 1): right-movers at about 3.7 sites per row, left-movers only in rare programs at about 0.5 sites per row, no stationary memory, and interactions whose output depends on both inputs (k = 3 only). Universality of the program drum is therefore not established. Follow-up: vary the slide s (N = mP − s, copy sites read x + s) and search for multi-site memory structures.
+
 ## 3. Tasks for the cheap models
 
 1. Simulator of the machine exactly as in §0, plus the helix and static-frame forms; check all three agree on random (N, P, k, p, s₀) with N = mP − 1, and that P | N dies (helix-period test from `sim/nand/helix.py`: e_τ = e_{τ−M} for small M after a short transient).
