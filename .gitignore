@@ -5,3 +5,4 @@ __pycache__/
 sim/latch/cost
 sim/latch/cost_prov
 sim/latch/dynamics
+results/latch/ranked.csv
