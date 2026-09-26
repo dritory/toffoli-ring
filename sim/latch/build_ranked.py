@@ -280,15 +280,30 @@ def main():
                 if indep_ab and g_tt == x_tt:
                     continue
 
-                is_clock = independent_of_xab(g_tt)
-
+                # q-complement symmetry: (f,g) ~ (f', g') where f'(q,..)=f(~q,..)
+                # and g' = NOT(g(~q,..)). The two representations of the same
+                # equivalence class can have different gate costs (permuting q
+                # is not free in general), so the canonical representative is
+                # whichever realization is cheaper -- never the more expensive
+                # one, which would misreport a total above what this class
+                # actually costs. Tie-break on the numeric tuple for determinism.
                 f2 = permute_q(f_tt)
                 g2 = complement(permute_q(g_tt))
-                canon = min((f_tt, g_tt), (f2, g2))
+                cost_a = cf + cg
+                cost_b = cost[f2] + cost[g2]
+                if cost_b < cost_a or (cost_b == cost_a and (f2, g2) < (f_tt, g_tt)):
+                    canon = (f2, g2)
+                else:
+                    canon = (f_tt, g_tt)
                 if canon in seen_canon:
                     continue
                 seen_canon.add(canon)
+                # also mark the other representation seen, so it isn't emitted
+                # again later as its own (f_tt,g_tt) outer-loop iteration
+                other = (f2, g2) if canon == (f_tt, g_tt) else (f_tt, g_tt)
+                seen_canon.add(other)
                 cf2, cg2 = cost[canon[0]], cost[canon[1]]
+                is_clock = independent_of_xab(canon[1])
                 rows.append({
                     "f_tt": canon[0], "g_tt": canon[1],
                     "cost_f": cf2, "cost_g": cg2, "cost_total": cf2 + cg2,

@@ -402,11 +402,11 @@ int main(void) {
                 search_combo(pairs[pi], e->pattern, e->g, rest, gc, found, found_len);
                 for (int t = 0; t < 6; t++) {
                     if (found_len[t] >= 0) {
-                        fprintf(out, "%d,%s,%s,%s,%s,%s,%d,%d,%s,%s,%d\n",
+                        fprintf(out, "%d,\"%s\",\"%s\",\"%s\",%s,\"%s\",%d,%d,%s,%s,%d\n",
                                 pi, astr, bstr, label, e->family, encstr, e->g, rest,
                                 TARGETS[t], found[t], found_len[t]);
                     } else {
-                        fprintf(out, "%d,%s,%s,%s,%s,%s,%d,%d,%s,none<=12,\n",
+                        fprintf(out, "%d,\"%s\",\"%s\",\"%s\",%s,\"%s\",%d,%d,%s,none<=12,\n",
                                 pi, astr, bstr, label, e->family, encstr, e->g, rest,
                                 TARGETS[t]);
                     }
