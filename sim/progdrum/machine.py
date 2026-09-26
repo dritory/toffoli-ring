@@ -152,14 +152,20 @@ def trace_helix(s0, p, k, ticks):
 
 
 # ---------------------------------------------------------------- (c) -----
-def static_frame_rows(p, k, m, row0, n_rows):
+def static_frame_rows(p, k, m, row0, n_rows, s=1):
     """Given row0 (length M = m*len(p) list of bits = e_0..e_{M-1}), compute
     n_rows further rows (r=1..n_rows) by the static-frame rule. Returns a
     list of rows (each length M), rows[0] = row0, rows[1..n_rows] computed.
+
+    s generalises N = M-1 (task 1) to N = M-s (task 2b), s = 1..P-1
+    (s=0 is the dead case, P|N, out of scope here). Copy sites then read
+    u_{r-1}(x+s) when x+s < M, and -- the generalised boundary rule --
+    u_r(x+s-M) (the SAME row's column x+s-M, in [0,s-1], already computed)
+    when x+s >= M, i.e. for the last s columns of the row.
     """
     P = len(p)
     M = m * P
-    N = M - 1
+    N = M - s
 
     def ref(cur, prev, x, d):
         idx = x - d
