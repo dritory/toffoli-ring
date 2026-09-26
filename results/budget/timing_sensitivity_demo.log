@@ -1,0 +1,4 @@
+bad-timing mismatches: 200/200 (expected: most flag=0,o toggles land on the SAME cell value whether read before or after, since XOR is its own inverse -- the real divergence shows up over a run, once nf feeds a later tick's decision; see run below)
+{'label': 'BB(2,2)', 'visits': 36, 'ticks': 1505736, 'halted': True, 'G': 105, 'l0_len': 41826} 0s
+{'label': 'counter L=3', 'visits': 450, 'ticks': 33682500, 'halted': False, 'G': 136, 'l0_len': 74850} 2s
+read-r-after-toggle variant: 50/50 runs diverge from run_l0 (should be > 0 -- confirms the harness is sensitive to this ordering)

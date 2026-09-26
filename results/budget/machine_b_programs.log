@@ -1,2 +1,2 @@
 trials=500 fails=0
-PASS: Machine B circuit matches spec reference tick-by-tick on all trials
+PASS: Machine B circuit (two-phase, master-slave) matches spec reference

@@ -1,0 +1,1 @@
+Correctly rejected the single-capacitor design: did not converge in 8 iterations -- likely a combinational feedback loop

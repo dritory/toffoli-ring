@@ -1,103 +1,110 @@
 MACHINE A -- verified two-instruction skip-flag machine
-Component-count rule (updated): every discrete component counts --
-transistors (MOSFET, used as ideal switches), diodes, resistors,
-capacitors. No ICs/relays. Two non-overlapping clock phases (EVAL, WRITE)
-come from the drive and are not counted. Dynamic storage is allowed: one
-bit lives on a capacitor, read non-destructively through MOSFET gates.
+Component-count rule: every discrete component counts -- transistors
+(MOSFET, NMOS or PMOS, each an ordinary switch-modeled device, 1
+component), diodes, resistors, capacitors. No ICs/relays. Two
+non-overlapping clock phases (phi1, phi2) from the drive, not counted.
+Dynamic storage allowed: bits live on capacitors, read non-destructively
+through MOSFET gates.
+
+*** REVISION NOTE *** An earlier version of this file (single capacitor
+S, write-access transistor T5 gated by phi_write, wired straight from
+DNODE = NAND(S,r) back into S) was WRONG: T1..T4 (the eval network) are
+not phase-gated, so during the write phase S is being changed WHILE the
+same live network still reads S as T_S's gate -- a combinational loop
+(S <- NAND(S,r)) that oscillates for r=1, and even where it settled, it
+could pick up r AFTER the memory's own toggle for this tick, i.e. read
+the wrong value. Confirmed as a real bug (not just a style objection):
+switchsim.py's stricter solver, run on that exact single-capacitor
+netlist, does not converge in 8 iterations and raises an error. Fixed
+below with a true master-slave cell (2 capacitors, never shorted
+together directly) -- see storage.py.
 
 STATE VARIABLE
-  S = flagbar ("execute enabled this tick"). Stored as charge on
-  capacitor C_S. flag (the machine's own name for the bit) = NOT S.
-  S is used ONLY as a transistor GATE net everywhere below -- never as a
-  source/drain (current-carrying) terminal -- so reading it never
-  disturbs its charge (the "read through a MOSFET gate" rule).
+  S (slave, on capacitor C_S) stores flag directly (flag=1 = skip
+  pending). Only ever a transistor GATE, never a source/drain, so
+  reading it is non-destructive.
+  M (master, on capacitor C_M) holds flagbar_next between phase 1
+  (when it is written from the live eval network) and phase 2 (when it
+  is read out, through a buffer, into S). Also only ever a gate itself
+  (T_buf's), except for the single access transistor that writes it.
 
-PRIMARY INPUTS (free, from the memory interface / program drum)
-  o, obar   : opcode bit, dual rail, from program memory.
-  r         : read bit of the cell under the pointer, single rail, from
-              data memory.
-  phi_eval, phi_write : the two non-overlapping clock phases (not counted).
+PRIMARY INPUTS (free): o, obar (dual rail, program memory); r (single
+rail, data memory); phi1, phi2 (the two non-overlapping phases).
 
-COMPONENTS (9 total: 5 transistors, 3 resistors, 1 capacitor, 0 diodes)
+COMPONENTS (13 total: 7 transistors, 4 resistors, 2 capacitors, 0 diodes)
 
-  EVALUATE-PHASE NETWORK (active during phi_eval; all gates are primary
-  inputs or S, so no feedback -- one settle per tick):
+  EVAL NETWORK (always live, in BOTH phases -- not phase-gated):
+    T1 (T_S, PMOS)   gate=S    a=K         b=GND      -- conducts iff flag=0
+    T2 (T_o)         gate=o    a=MOVE_P_N  b=K
+    T3 (T_obar)      gate=obar a=MOVE_M_N  b=K
+    T4 (T_r)         gate=r    a=DNODE     b=K
+    R1  MOVE_P_N -> VDD   R2  MOVE_M_N -> VDD   R3  DNODE -> VDD
 
-    T1 (T_S, shared)   gate=S      a=K         b=GND
-    T2 (T_o)           gate=o      a=MOVE_P_N  b=K
-    T3 (T_obar)        gate=obar   a=MOVE_M_N  b=K
-    T4 (T_r)           gate=r      a=DNODE     b=K
+    MOVE_P_N = NAND(flagbar, o)     -> move+ = NOT(MOVE_P_N)
+    MOVE_M_N = NAND(flagbar, obar)  -> move- = NOT(MOVE_M_N)
+    DNODE    = NAND(flagbar, r)     -> flagbar_next; fed to the storage
+                                        cell below, NOT directly into S.
+    toggle (active LOW, bare wire S; abstractly toggle=NOT(S)=flagbar)
 
-    R1  MOVE_P_N -> VDD   (pull-up, rail=1)
-    R2  MOVE_M_N -> VDD   (pull-up, rail=1)
-    R3  DNODE    -> VDD   (pull-up, rail=1)
+  STORAGE CELL (storage.py, shared with Machine B):
+    T5 (T_wm)   gate=phi1  a=DNODE     b=M     -- master sample
+    T6 (T_buf)  gate=M     a=BUF_NODE  b=GND   -- non-destructive read
+                                                    of M, inverting
+    R4  BUF_NODE -> VDD
+    T7 (T_ws)   gate=phi2  a=BUF_NODE  b=S     -- slave write
+    C1 (C_M), C2 (C_S)  capacitors
 
-  Reading: MOVE_P_N is pulled to GND (0) iff S=1 AND o=1 (both switches
-  T1,T2 close, completing MOVE_P_N-T2-K-T1-GND); otherwise R1 holds it
-  at 1. Likewise for MOVE_M_N (via T3) and DNODE (via T4). So:
-      MOVE_P_N = NAND(S, o)
-      MOVE_M_N = NAND(S, obar)
-      DNODE    = NAND(S, r)
+  Why one buffer (T6) is enough, not two: a NAND-stack (T1..T4, or T5's
+  path through them) always comes out inverted, so DNODE is already
+  flagbar_next. T6 inverts it once more, landing on flag_next -- exactly
+  what the slave (which stores flag) needs. M and S are NEVER directly
+  shorted (phi1 and phi2 never overlap, and T6 sits electrically between
+  them), so there is no charge-sharing ambiguity between the two
+  capacitors, only a driven hand-off through T6's output.
 
-  OUTPUT STROBES (polarity stated per wire; the memory side is built to
-  match):
-    toggle strobe   (active HIGH) = S                     -- 0 components,
-                                     direct tap of C_S as a gate signal.
-    move+  strobe   (active LOW on MOVE_P_N; abstractly move+ = NOT(MOVE_P_N) = S & o)
-    move-  strobe   (active LOW on MOVE_M_N; abstractly move- = NOT(MOVE_M_N) = S & obar)
+TIMING (text diagram)
+```
+tick t: |<-------------- phi1 -------------->|<-------------- phi2 -------------->|
+ o,obar,r settle (this tick's values, held by memory for the whole tick)
+ S = flag, STABLE (only T7/phi2 could change it, and phi2=0 here)
+ T1..T4 settle MOVE_P_N, MOVE_M_N, DNODE from this (stable) S and r
+ T5 closed (phi1=1): M := DNODE   (captured, correct, = flagbar_next)
+ toggle=NOT(S), move+=NOT(MOVE_P_N), move-=NOT(MOVE_M_N) valid all of phi1;
+   memory samples/latches these at the phi1->phi2 boundary (its own
+   circuitry, excluded from this count) and acts on them during/after
+   phi2 -- i.e. the memory's physical toggle of the cell happens AFTER
+   r for this tick was already used above. "sample r before the toggle"
+   is satisfied by construction.
+                                        |  T5 open (phi1=0): M holds.   |
+                                        |  T6 (always live) reads M,    |
+                                        |  BUF_NODE = NOT(M) = flag_next|
+                                        |  T7 closed (phi2=1): S:=BUF_  |
+                                        |  NODE -- becomes flag for     |
+                                        |  tick t+1.                    |
+                                        |  T1..T4 keep re-evaluating    |
+                                        |  against the now-changing S,  |
+                                        |  but DNODE cannot reach M      |
+                                        |  (T5 is open) so this has no  |
+                                        |  effect -- no feedback loop.  |
+```
 
-  WRITE-BACK (during phi_write, disjoint from phi_eval):
-    T5 (M_write)  gate=phi_write   a=DNODE   b=(C_S node)
-    C1 (C_S)      capacitor holding S, charged/discharged through T5.
+DYNAMIC-STORAGE ASSUMPTIONS: 1 tick = 1 s; C_M, C_S small gate-capacitance
+nodes (~0.1-1 pF); MOSFET off-state leakage assumed low enough (sub-pA
+class device) that droop over a 1 s hold between accesses is negligible.
+Charge sharing: M and S are each accessed by exactly one pass transistor
+apiece and are never merged with each other or with any other capacitor,
+so no capacitance-ratio modelling is needed -- each is always either
+isolated (holding) or driven by a single low-impedance source (never two
+drivers contending, never two capacitors shorted together).
 
-  DNODE already equals NAND(S,r) = the correct new stored value
-  (S_next = flagbar_next = NOT(flag_next) = NOT(flagbar . r) = NAND(S,r)),
-  so no extra inverter is needed for the state update -- T5 simply gates
-  the already-correct DNODE value onto C_S.
+WHERE THE 13 COMPONENTS GO
+  latch (2 capacitors + isolation/buffer): C1, C2, T5, T6, T7 = 5
+  shared read switch: T1/T_S = 1
+  decode/strobe switches: T2, T3, T4 = 3
+  pull-ups: R1, R2, R3, R4 = 4
+  inverters: T6 (doubles as the buffer between M and S; no other
+             inverter is needed anywhere in this machine)
 
-TIMING (one tick = one phi_eval + one phi_write, non-overlapping):
-  1. phi_eval high: o,obar,r settle (supplied by program/data memory for
-     this tick); S is whatever C_S held from the previous tick's write
-     (stable all through this phase -- T5 is off). T1..T4 close/open per
-     S,o,obar,r; MOVE_P_N, MOVE_M_N, DNODE settle (single pass, no
-     feedback). toggle=S and the two move strobes are valid for the
-     WHOLE tick (S doesn't change until the next tick's write), so the
-     memory may act on them any time phi_eval (or phi_eval-derived timing)
-     is asserted. r is read here, BEFORE the memory physically flips the
-     cell (see below) -- satisfies "sample r before the toggle".
-  2. Memory acts (excluded from CPU count): it toggles the addressed cell
-     using the toggle line, and moves the pointer using move+/move-. The
-     read of r for this tick already happened combinationally during
-     phi_eval before the memory's own internal flip takes effect; the
-     flip itself happens at/after phi_eval closes (start of phi_write),
-     so DNODE (already latched by settling) is unaffected by the toggle
-     it caused.
-  3. phi_write high: T5 closes, DNODE's settled value (still valid,
-     computed from the OLD S) is written into C_S, becoming S for tick
-     t+1. phi_eval is low throughout phi_write, so T1..T4 do not
-     re-evaluate against a half-updated S.
-  4. flag update visible to the CPU's own next-tick logic only, at the
-     start of tick t+1 (standard single-bit dynamic register).
-
-DYNAMIC-STORAGE ASSUMPTIONS (stated, per the "assume leakage and
-component values" instruction): 1 tick = 1 s. C_S ~ 100 fF-1 pF gate
-capacitance node; MOSFET off-state (sub-threshold) leakage assumed low
-enough (sub-pA class device) that droop over a 1 s hold is negligible
-next to the logic swing -- i.e. we assume a leakage-hardened device
-family, not a bare commodity MOSFET; this is the one physical
-idealization in the design, exactly parallel to "ideal diodes" in the
-original DTL framing.
-
-WHERE THE COMPONENTS GO
-  latch (state):        C_S (1 capacitor) + T5/M_write (1 transistor) = 2
-  shared read switch:    T1/T_S (1 transistor)
-  decode/strobe switches: T2,T3,T4 (3 transistors)
-  pull-ups:              R1,R2,R3 (3 resistors)
-  inverters:              none needed (toggle is a bare wire; MOVE_P_N/
-                          MOVE_M_N/DNODE are used directly in the
-                          polarity the interface is defined to accept)
-
-TOTAL: 9 components (5 transistors, 3 resistors, 1 capacitor, 0 diodes).
-See results/budget/tier4.md for the DTL-era data point (diodes/resistors
-free, static master-slave latch: 4 transistors) alongside this
-fully-costed count.
+TOTAL: 13 components (7 transistors, 4 resistors, 2 capacitors, 0
+diodes). See results/budget/tier4.md for the (superseded) DTL-rule data
+point and for why the earlier 9-component figure was wrong.
