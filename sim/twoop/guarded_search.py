@@ -17,9 +17,15 @@ Targets:
 Window: R groups each side of the current group (R depends on L and g, see
 window_half_width_groups), which is provably large enough that pruning on
 leaving the window cannot reject any word that would in fact be exact on an
-unbounded tape (see orchestrator's formula). Vectorized over ALL valuations
-at once with numpy (one lane per valuation) since the window can be large
-for g=1.
+unbounded tape (see orchestrator's formula: R = ceil(floor(L/2)/g) + 1).
+
+Performance: vectorized over ALL valuations at once with numpy (one lane
+per valuation). The whole window (up to ~21 bits for our L/g combinations)
+is bit-packed into a single int64 per lane; every sub-op (flip, move,
+skip-test) becomes a handful of elementwise numpy bit ops (shift/and/xor)
+on 1-D arrays of length N, rather than 2-D gather/scatter into an (N,W)
+cell array -- this was the dominant cost of an earlier version and is
+roughly W times cheaper (W up to 21 here).
 """
 import math
 
@@ -35,53 +41,50 @@ def window_half_width_groups(L, g):
 GUARDED_TARGETS = ("FLIP", "NEXT", "PREV", "CFLIP", "CNEXT", "CPREV")
 
 
-def apply_bundle_vec(tape, ptr, flag, alive, ops, W):
-    """tape: (N,W) int8 (mutated in place -- caller must pass a fresh copy
-    per BFS node). ptr: (N,) int64. flag: (N,) int8. alive: (N,) bool.
-    Returns (tape, new_ptr, new_flag, new_alive)."""
-    active0 = alive
-    gated = active0 & (flag == 1)
-    real_active = active0 & ~gated
+def _pack(bits_tuple):
+    """A tuple of 0/1 cell values -> integer, cell 0 at bit 0 (LSB)."""
+    v = 0
+    for i, b in enumerate(bits_tuple):
+        if b:
+            v |= (1 << i)
+    return v
 
-    new_flag = flag.copy()
-    new_flag[gated] = 0
 
-    cur_ptr = ptr.copy()
-    fo = np.zeros(tape.shape[0], dtype=np.int8)
-    newly_dead = np.zeros(tape.shape[0], dtype=bool)
+def apply_bundle_vec(bits, ptr, flag, alive, ops, W):
+    """bits, ptr, flag, alive: (N,) arrays. Every transformation below
+    produces a NEW array (no in-place mutation), so the caller's arrays are
+    never touched and need not be pre-copied. Returns (new_bits, new_ptr,
+    new_flag, new_alive)."""
+    gated = alive & (flag == 1)
+    real_active = alive & ~gated
+
+    cur_ptr = ptr
+    fo = np.zeros_like(flag)
+    active_now = real_active
 
     for op in ops:
-        mask = real_active & ~newly_dead
-        idxs = np.nonzero(mask)[0]
-        if idxs.size == 0:
-            continue
+        curvals = (bits >> cur_ptr) & 1
         if op.kind == FLIP:
-            tape[idxs, cur_ptr[idxs]] ^= 1
+            flipmask = np.where(active_now, np.left_shift(np.int64(1), cur_ptr), np.int64(0))
+            bits = bits ^ flipmask
         elif op.kind == MOVE:
-            curvals = tape[idxs, cur_ptr[idxs]]
             if op.cond == ALWAYS:
-                domove = np.ones(idxs.size, dtype=bool)
+                domove = active_now
             elif op.cond == EQ0:
-                domove = (curvals == 0)
+                domove = active_now & (curvals == 0)
             else:
-                domove = (curvals == 1)
-            newpos = cur_ptr[idxs] + np.where(domove, op.dir, 0)
-            oob = (newpos < 0) | (newpos >= W)
-            if oob.any():
-                newly_dead[idxs[oob]] = True
-            good = ~oob
-            cur_ptr[idxs[good]] = newpos[good]
+                domove = active_now & (curvals == 1)
+            newpos = cur_ptr + np.where(domove, op.dir, 0)
+            oob = active_now & ((newpos < 0) | (newpos >= W))
+            active_now = active_now & ~oob
+            cur_ptr = np.where(active_now, newpos, cur_ptr)
         elif op.kind == SKIP:
-            curvals = tape[idxs, cur_ptr[idxs]]
-            fo[idxs] = (curvals == op.v).astype(np.int8)
+            match = (curvals == op.v).astype(fo.dtype)
+            fo = np.where(active_now, match, fo)
 
-    alive2 = alive & ~newly_dead
-    ptr2 = ptr.copy()
-    still_active = real_active & ~newly_dead
-    ptr2[still_active] = cur_ptr[still_active]
-    flag2 = new_flag.copy()
-    flag2[still_active] = fo[still_active]
-    return tape, ptr2, flag2, alive2
+    alive2 = alive & (~real_active | active_now)
+    flag2 = np.where(gated, 0, np.where(real_active, fo, flag))
+    return bits, cur_ptr, flag2, alive2
 
 
 def search_pair_guarded(bundleA, bundleB, g, template, rest, L,
@@ -96,68 +99,78 @@ def search_pair_guarded(bundleA, bundleB, g, template, rest, L,
 
     idxarr = np.arange(N, dtype=np.int64)
     bitarr = np.arange(ngroups, dtype=np.int64)
-    combos_bits = ((idxarr[:, None] >> bitarr[None, :]) & 1).astype(np.int8)  # (N, ngroups)
+    combos_bits = (idxarr[:, None] >> bitarr[None, :]) & 1  # (N, ngroups), int64
 
-    t0 = np.array(template(0), dtype=np.int8)  # (g,)
-    t1 = np.array(template(1), dtype=np.int8)  # (g,)
-    tape0_3d = np.where(combos_bits[:, :, None] == 1, t1[None, None, :], t0[None, None, :])
-    tape0 = tape0_3d.reshape(N, W)
-    xc = combos_bits[:, cur_slot]  # (N,)
+    seg0 = _pack(tuple(template(0)))
+    seg1 = _pack(tuple(template(1)))
+
+    tape0 = np.zeros(N, dtype=np.int64)
+    for j in range(ngroups):
+        contrib = np.where(combos_bits[:, j] == 1, seg1, seg0).astype(np.int64) << (j * g)
+        tape0 = tape0 | contrib
+    xc = combos_bits[:, cur_slot]  # (N,), 0/1
 
     cur_start = cur_slot * g
-    expected_flip = tape0.copy()
-    toggled = np.where(xc[:, None] == 1, t0[None, :], t1[None, :])  # toggle(xc)
-    expected_flip[:, cur_start:cur_start + g] = toggled
+    group_mask = ((1 << g) - 1) << cur_start
+    outside_mask = ~group_mask  # numpy int64 bitwise-not; fine for masking via AND
 
-    expected_cflip = tape0.copy()
-    expected_cflip[:, cur_start:cur_start + g] = t0[None, :]  # always template(0)
+    toggled_seg = np.where(xc == 1, seg0, seg1).astype(np.int64)  # toggle(xc)
+    expected_flip = (tape0 & outside_mask) | (toggled_seg << cur_start)
+    expected_cflip = (tape0 & outside_mask) | (np.int64(seg0) << cur_start)  # always template(0)
 
     letters = {"A": bundleA, "B": bundleB}
     found = {p: None for p in want}
+    ptr0_cnext = ptr0 + g * xc
+    ptr0_cprev = ptr0 - g * xc
 
-    def check(word_str, tape, ptr, flag, alive):
-        # alive is guaranteed all-True here (pruned words never reach check)
+    def check(word_str, bits, ptr, flag):
+        # (alive is guaranteed all-True here -- pruned words never reach check)
         if not np.all(flag == 0):
             return
         pending = [p for p in found if found[p] is None]
+        if not pending:
+            return
+        same0 = None  # lazily computed, shared by NEXT/PREV/CNEXT/CPREV
         for prim in pending:
             if prim == "FLIP":
-                ok = np.array_equal(tape, expected_flip) and np.all(ptr == ptr0)
-            elif prim == "NEXT":
-                ok = np.array_equal(tape, tape0) and np.all(ptr == ptr0 + g)
-            elif prim == "PREV":
-                ok = np.array_equal(tape, tape0) and np.all(ptr == ptr0 - g)
+                ok = np.all(ptr == ptr0) and np.array_equal(bits, expected_flip)
             elif prim == "CFLIP":
-                ok = np.array_equal(tape, expected_cflip) and np.all(ptr == ptr0)
-            elif prim == "CNEXT":
-                ok = np.array_equal(tape, tape0) and np.array_equal(ptr, ptr0 + g * xc)
-            elif prim == "CPREV":
-                ok = np.array_equal(tape, tape0) and np.array_equal(ptr, ptr0 - g * xc)
+                ok = np.all(ptr == ptr0) and np.array_equal(bits, expected_cflip)
             else:
-                raise ValueError(prim)
+                if same0 is None:
+                    same0 = np.array_equal(bits, tape0)
+                if not same0:
+                    ok = False
+                elif prim == "NEXT":
+                    ok = np.all(ptr == ptr0 + g)
+                elif prim == "PREV":
+                    ok = np.all(ptr == ptr0 - g)
+                elif prim == "CNEXT":
+                    ok = np.array_equal(ptr, ptr0_cnext)
+                elif prim == "CPREV":
+                    ok = np.array_equal(ptr, ptr0_cprev)
+                else:
+                    raise ValueError(prim)
             if ok:
                 found[prim] = (word_str, len(word_str))
 
-    root = (tape0.copy(), np.full(N, ptr0, dtype=np.int64),
-            np.zeros(N, dtype=np.int8), np.ones(N, dtype=bool))
+    root = (tape0, np.full(N, ptr0, dtype=np.int64),
+            np.zeros(N, dtype=np.int64), np.ones(N, dtype=bool))
 
     frontier = [("", root)]
     for depth in range(1, L + 1):
         if all(found[p] is not None for p in want):
             break
         next_frontier = []
-        for prefix, (tape, ptr, flag, alive) in frontier:
+        for prefix, (bits, ptr, flag, alive) in frontier:
             for ch in ("A", "B"):
                 bundle = letters[ch]
-                new_tape = tape.copy()
-                new_ptr, new_flag, new_alive_ptr = None, None, None
-                nt, np_, nf, na = apply_bundle_vec(new_tape, ptr.copy(), flag.copy(),
-                                                    alive.copy(), bundle.ops, W)
+                nb, np_, nf, na = apply_bundle_vec(bits, ptr, flag, alive, bundle.ops, W)
                 if not na.all():
                     continue
                 word = prefix + ch
-                check(word, nt, np_, nf, na)
-                next_frontier.append((word, (nt, np_, nf, na)))
+                check(word, nb, np_, nf)
+                next_frontier.append((word, (nb, np_, nf, na)))
         frontier = next_frontier
         if not frontier:
             break

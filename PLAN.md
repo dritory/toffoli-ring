@@ -1,5 +1,21 @@
 # Plan: sequential NAND ring (and Toffoli sibling)
 
+## Results (after the sweep)
+
+* **V1 confirmed.** Seeds agreeing on cells 0..k−1 are identical after one pass; ring transient ≤ 3 and period ≤ 9 for k = 2..5, N = 16..64. Lemma A holds.
+* **V2 corrected.** Write-between rules collapse within 2 passes to a helical rotation e_τ = e_{τ−M} with M = L + p (L = N − (b−c), p = c − a), exact at the median in all 130 (geometry, N) cells. The "L + 1" in Lemma C below is correct only for p = 1. Some seeds fall into even smaller cycles. In ring coordinates this appears as a kink walking around the ring, not a uniform shift.
+* **V3 qualitatively confirmed.** Runs translate and never interact. "Isolated ones die" holds only in one of the two phases of the period-2 background; a single cell in the other phase is a width-2 run and translates.
+* **R3 is dead.** 5197 of 5200 seeds reach e_τ = e_{τ−M} within 7 passes, with either M = N + k − 1 (helical rotation) or M a small constant independent of N (the Lemma A register cycle, which is an exact solution of R3 because the target read becomes redundant). The remaining 3 have period 115 passes. "Periods grow with N" in S1 was a bad liveness test: a rotation passes it. Use the helix-period test (`sim/nand/helix.py`) as the liveness criterion from now on.
+* **Consequence.** Every tested one-NAND drum with a fixed rule dies, with or without the target diode. Common mechanism: the only old value the gate sees enters once per step through a NAND with recent outputs, and the output sequence locks onto a shift of itself. S4 (a read strictly ahead of the write) is the same shape and is expected to die the same way; not run.
+
+## Next candidate: NAND drum with a program track
+
+Add a program track p (free memory) read at each step and gate the write: s[i+k] ← NAND(s[i], s[i+1]) if p[τ mod P] else unchanged. One NAND transistor; the program bit gates the write strobe (diode AND, or one transistor). In grid form, with row t = pass and column c = cell:
+
+    v(t, c) = en(t, c) ? NAND(v(t, c−k), v(t, c−k+1)) : v(t−1, c),    en(t, c) = p((tN + c) mod P).
+
+If P divides N the enable pattern is the same every pass, unwritten cells are frozen constants, and Lemma A applies again: dead. If N ≡ d (mod P) with d ≠ 0 the pattern slides d cells per pass, so a cell written in one pass can hold its value in later passes. The grid is then a circuit with a space-time periodic layout, in which signals move down (copy) and right (NAND chains). A frame drifting right at the slide speed gives both directions, which is what a cellular automaton step needs. Expected universal by construction (simulate a Turing machine encoded as a CA with a blank, stationary background so the helical seam is harmless). Not yet built. Handover to be written.
+
 Status of the Toffoli ring: see REPORT.md (open for all k; k=2 conjectured not universal). Everything below reuses one piece of machinery from it: **write the sweep as a recurrence on the helix** (global step τ = tN + i, e_τ = value written at step τ). The only thing that matters about a rule is the *age* of each value it reads, i.e. how many steps ago the read cell was last written.
 
 ## 1. The NAND ring as specified is not universal, for every k and every N

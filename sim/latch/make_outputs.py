@@ -11,7 +11,8 @@ sys.path.insert(0, "/home/user/toffoli-ring/sim/latch")
 from model import pass_latch  # noqa: E402
 
 BASE = "/home/user/toffoli-ring"
-RANKED = f"{BASE}/results/latch/ranked.csv"
+RANKED_FULL = f"{BASE}/results/latch/ranked.csv"     # task-1 deliverable, all surviving pairs
+RANKED = f"{BASE}/results/latch/ranked_top.csv"       # task-2 subset actually simulated
 CYCLES = f"{BASE}/sim/latch/cycles.csv"
 VACUUM = f"{BASE}/sim/latch/vacuum.csv"
 INTERACT = f"{BASE}/sim/latch/interact.csv"
@@ -76,7 +77,7 @@ def main():
                   "cyc_median_transient", "cyc_median_period", "cyc_max_period", "cyc_frac_capped",
                   "vac_usable", "vac_qstart", "vac_period",
                   "n_gliders", "glider_examples", "n_interact_tested", "n_interact_dependent",
-                  "interact_pass"]
+                  "interact_pass", "example_dependent"]
 
     out_rows = []
     for (f_hex, g_hex), rr in ranked.items():
@@ -112,6 +113,7 @@ def main():
                 "n_gliders": n_glide, "glider_examples": iac.get("glider_examples", ""),
                 "n_interact_tested": n_tested, "n_interact_dependent": n_dep,
                 "interact_pass": n_dep > 0,
+                "example_dependent": iac.get("example_dependent", ""),
             })
 
     with open(DYNAMICS_OUT, "w", newline="") as f:
@@ -124,8 +126,31 @@ def main():
     good = [r for r in out_rows if r["vac_usable"] and r["n_gliders"] > 0 and r["interact_pass"]]
     good.sort(key=lambda r: (int(r["cost_total"]), r["f_hex"], r["g_hex"], r["k"]))
 
+    with open(RANKED_FULL) as ff:
+        full_rows = list(csv.DictReader(ff))
+    cost_counts = defaultdict(int)
+    class_counts = defaultdict(int)
+    for r in full_rows:
+        cost_counts[int(r["cost_total"])] += 1
+        class_counts[r["class"]] += 1
+    n_bij = sum(1 for r in full_rows if r["bijective"] == "yes")
+
     with open(SUMMARY_OUT, "w") as f:
         f.write("# Latch-ring dynamics: cheapest pairs with vacuum + glider + interaction\n\n")
+        f.write("## Task 1: full ranked.csv (all surviving pairs, cost bound <= 3)\n\n")
+        f.write(f"Total surviving pairs: {len(full_rows)} "
+                f"({class_counts.get('generic', 0)} generic, {class_counts.get('clock', 0)} clock class). "
+                f"Bijective on N=8..12, k=2,3: {n_bij}.\n\n")
+        f.write("| cost_total | pairs |\n|---|---|\n")
+        for c in sorted(cost_counts):
+            f.write(f"| {c} | {cost_counts[c]} |\n")
+        f.write("\n## Task 2: the tested subset (results/latch/ranked_top.csv)\n\n")
+        f.write(f"Task 2 (cycle stats, vacuum, gliders, pairwise interaction) was run on "
+                f"{len(set((r['f_hex'], r['g_hex']) for r in out_rows))} pairs: every pair with "
+                f"cost_total<=2 (all {sum(1 for r in full_rows if int(r['cost_total'])<=2)} of them), "
+                f"plus a systematic sample of the cost_total==3 pairs (running the full pairwise "
+                f"interaction grid on all {cost_counts.get(3,0)} cost-3 pairs would take on the order "
+                f"of a day; see sim/latch/build_ranked_top.py).\n\n")
         f.write(f"Total (pair,k) rows evaluated: {len(out_rows)}. ")
         f.write(f"Rows with a usable vacuum: {sum(1 for r in out_rows if r['vac_usable'])}. ")
         f.write(f"...with >=1 glider: {sum(1 for r in out_rows if r['vac_usable'] and r['n_gliders']>0)}. ")
@@ -170,13 +195,24 @@ def main():
                 s, q = pass_latch(s, q, k, f_tt, g_tt)
             f.write("```\n\n")
 
-            # one collision: place the same pattern at 0 and at d=12 (or first tested d)
-            d = 12
-            f.write(f"### Collision: same pattern at positions 0 and {d}\n\n```\n")
+            # one collision: the actual (P,Q,d) triple the interact test flagged as
+            # depending on both patterns (not a guess)
+            ex = r["example_dependent"]
+            if ex:
+                pq, qq_, dpart = ex.split(",")
+                p_pat, p_w = (int(v) for v in pq.split("/"))
+                q_pat, q_w = (int(v) for v in qq_.split("/"))
+                d = int(dpart.split("=")[1])
+            else:
+                p_pat, p_w, q_pat, q_w, d = pat, width, pat, width, 12
+            f.write(f"### Collision: pattern {p_pat:0{p_w}b} at position 0, "
+                    f"pattern {q_pat:0{q_w}b} at position {d} "
+                    f"(flagged by the interact test as depending on both)\n\n```\n")
             s = [0] * N
-            for i in range(width):
-                s[i] = (pat >> i) & 1
-                s[(d + i) % N] = (pat >> i) & 1
+            for i in range(p_w):
+                s[i] = (p_pat >> i) & 1
+            for i in range(q_w):
+                s[(d + i) % N] |= (q_pat >> i) & 1
             q = qstart
             for t in range(26):
                 f.write("".join("#" if b else "." for b in s) + "\n")

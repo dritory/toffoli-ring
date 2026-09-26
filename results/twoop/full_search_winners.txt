@@ -1,0 +1,3 @@
+pairs_searched=1017
+rows=49833
+winners=0

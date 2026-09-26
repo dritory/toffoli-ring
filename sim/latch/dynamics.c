@@ -235,7 +235,7 @@ static void mode_interact(FILE *pf, FILE *vacf) {
     /* read vacuum results to know, per (f,g,k), which qstart to use (prefer period 1,
      * else smallest 2..4; -1 means unusable) */
     printf("f_hex,g_hex,label,k,qstart,vac_period,n_gliders,glider_examples,"
-           "n_interact_tested,n_interact_dependent\n");
+           "n_interact_tested,n_interact_dependent,example_dependent\n");
     char line[512];
     /* map key -> (qstart,period) best found, read all lines first */
     typedef struct { unsigned fh, gh; int k; int qs; long period; } VRec;
@@ -264,7 +264,7 @@ static void mode_interact(FILE *pf, FILE *vacf) {
                 }
             }
             if (best_qs < 0) {
-                printf("%04x,%04x,%s,%d,,,0,,0,0\n", fh, gh, label, k);
+                printf("%04x,%04x,%s,%d,,,0,,0,0,\n", fh, gh, label, k);
                 continue;
             }
             int q_start = best_qs;
@@ -304,6 +304,7 @@ static void mode_interact(FILE *pf, FILE *vacf) {
 
             /* pairwise interaction test over d=8..24 */
             long n_tested = 0, n_dependent = 0;
+            int example_found = 0, ex_pi = 0, ex_pj = 0, ex_d = 0;
             for (int d = 8; d <= 24; d++) {
                 /* Delta(pi,pj) = combined XOR predicted, for all pi<=pj (P at 0, Q at d) */
                 /* store deltas in a small grid to test dependence on both P and Q */
@@ -348,12 +349,21 @@ static void mode_interact(FILE *pf, FILE *vacf) {
                             for (int i = 0; i < BN; i++) { d1[i] = comb[pi][pj][i] ^ pred[pi][pj][i]; d2[i] = comb[pi2][pj][i] ^ pred[pi2][pj][i]; }
                             if (!arreq(d1, d2, BN)) { dep_on_p = 1; break; }
                         }
-                        if (dep_on_q && dep_on_p) n_dependent++;
+                        if (dep_on_q && dep_on_p) {
+                            n_dependent++;
+                            if (!example_found) { example_found = 1; ex_pi = pi; ex_pj = pj; ex_d = d; }
+                        }
                     }
                 }
             }
-            printf("%04x,%04x,%s,%d,%d,%ld,%d,%s,%ld,%ld\n",
-                   fh, gh, label, k, q_start, best_period, n_gliders, glide_ex, n_tested, n_dependent);
+            char example_str[64] = "";
+            if (example_found) {
+                snprintf(example_str, sizeof(example_str), "%d/%d,%d/%d,d=%d",
+                         pats[ex_pi], ws[ex_pi], pats[ex_pj], ws[ex_pj], ex_d);
+            }
+            printf("%04x,%04x,%s,%d,%d,%ld,%d,%s,%ld,%ld,%s\n",
+                   fh, gh, label, k, q_start, best_period, n_gliders, glide_ex, n_tested, n_dependent,
+                   example_str);
         }
         fflush(stdout);
     }

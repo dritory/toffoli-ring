@@ -5,4 +5,17 @@ __pycache__/
 sim/latch/cost
 sim/latch/cost_prov
 sim/latch/dynamics
+sim/latch/bij
 results/latch/ranked.csv
+sim/latch/cost_table.txt
+sim/latch/cost_table_L4.txt
+sim/latch/cost_run.log
+sim/latch/bij_out.txt
+sim/latch/bij.log
+sim/latch/pairs.txt
+sim/latch/pairs_top.txt
+sim/latch/cycles.csv
+sim/latch/vacuum.csv
+sim/latch/interact.csv
+sim/latch/test_pairs.txt
+sim/latch/test_vac.csv

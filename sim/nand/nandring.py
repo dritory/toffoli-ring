@@ -38,6 +38,40 @@ def r3_pass(s, k):
     return s
 
 
+def helix_trace_general(s0, a, b, c, total_steps):
+    """Step-by-step trace of the general one-NAND rule s[i+c] = NOT(s[i+a]&s[i+b]);
+    returns the string of written bits e_0..e_{total_steps-1} (global step tau,
+    i = tau % n). Mutates a local copy of s0."""
+    n = len(s0)
+    s = list(s0)
+    out = []
+    for tau in range(total_steps):
+        i = tau % n
+        va = s[(i + a) % n]
+        vb = s[(i + b) % n]
+        val = 1 - (va & vb)
+        s[(i + c) % n] = val
+        out.append('1' if val else '0')
+    return ''.join(out)
+
+
+def helix_trace_r3(s0, k, total_steps):
+    """Step-by-step trace of R3(k): s[i+k] = NOT(s[i]&s[i+1]&s[i+k]).
+    Returns the string of written bits e_0..e_{total_steps-1}."""
+    n = len(s0)
+    s = list(s0)
+    out = []
+    for tau in range(total_steps):
+        i = tau % n
+        v0 = s[i]
+        v1 = s[(i + 1) % n]
+        vk = s[(i + k) % n]
+        val = 1 - (v0 & v1 & vk)
+        s[(i + k) % n] = val
+        out.append('1' if val else '0')
+    return ''.join(out)
+
+
 def to_str(bits):
     return "".join("#" if b else "." for b in bits)
 

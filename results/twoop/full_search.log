@@ -29,3 +29,16 @@ encoding x rest combos: 49
   pair 650/1017  rows=31899  winners=0  elapsed=658.0s
   pair 675/1017  rows=33124  winners=0  elapsed=684.2s
   pair 700/1017  rows=34349  winners=0  elapsed=711.5s
+  pair 725/1017  rows=35574  winners=0  elapsed=737.8s
+  pair 750/1017  rows=36799  winners=0  elapsed=766.1s
+  pair 775/1017  rows=38024  winners=0  elapsed=794.3s
+  pair 800/1017  rows=39249  winners=0  elapsed=823.1s
+  pair 825/1017  rows=40474  winners=0  elapsed=850.8s
+  pair 850/1017  rows=41699  winners=0  elapsed=879.8s
+  pair 875/1017  rows=42924  winners=0  elapsed=908.1s
+  pair 900/1017  rows=44149  winners=0  elapsed=935.1s
+  pair 925/1017  rows=45374  winners=0  elapsed=962.7s
+  pair 950/1017  rows=46599  winners=0  elapsed=989.7s
+  pair 975/1017  rows=47824  winners=0  elapsed=1018.3s
+  pair 1000/1017  rows=49049  winners=0  elapsed=1046.5s
+DONE. pairs=1017 rows=49833 winners=0 elapsed=1066.2s
