@@ -2,3 +2,5 @@ sim/cycles
 sim/sample
 __pycache__/
 *.pyc
+sim/latch/cost
+sim/latch/cost_prov
