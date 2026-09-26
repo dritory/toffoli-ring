@@ -1,0 +1,9 @@
+counter 12 {'G': 150, 'R_len': 13615, 'l0_ticks': 120750, 'passes': 300, 'idle_after_halt': 0, 'l0_checks': 300, 'halted': False} tape_ones 7 state C0 2s
+counter 24 {'G': 150, 'R_len': 13615, 'l0_ticks': 120750, 'passes': 300, 'idle_after_halt': 0, 'l0_checks': 300, 'halted': False} tape_ones 8 state C0 2s
+counter 48 {'G': 150, 'R_len': 13615, 'l0_ticks': 120750, 'passes': 300, 'idle_after_halt': 0, 'l0_checks': 300, 'halted': False} tape_ones 11 state C0 3s
+echo 12 {'G': 119, 'R_len': 10807, 'l0_ticks': 95880, 'passes': 50, 'idle_after_halt': 0, 'l0_checks': 50, 'halted': False} tape_ones 0 state READ 0s
+echo 24 {'G': 119, 'R_len': 10807, 'l0_ticks': 95880, 'passes': 50, 'idle_after_halt': 0, 'l0_checks': 50, 'halted': False} tape_ones 0 state READ 0s
+echo 48 {'G': 119, 'R_len': 10807, 'l0_ticks': 95880, 'passes': 50, 'idle_after_halt': 0, 'l0_checks': 50, 'halted': False} tape_ones 0 state READ 0s
+BB(2,2) 12 {'G': 119, 'R_len': 8449, 'l0_ticks': 74808, 'passes': 9, 'idle_after_halt': 3, 'l0_checks': 9, 'halted': True} tape_ones 4 state HALT 0s
+BB(2,2) 24 {'G': 119, 'R_len': 8449, 'l0_ticks': 74808, 'passes': 9, 'idle_after_halt': 3, 'l0_checks': 9, 'halted': True} tape_ones 4 state HALT 0s
+BB(2,2) 48 {'G': 119, 'R_len': 8449, 'l0_ticks': 74808, 'passes': 9, 'idle_after_halt': 3, 'l0_checks': 9, 'halted': True} tape_ones 4 state HALT 0s

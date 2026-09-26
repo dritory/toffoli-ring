@@ -21,6 +21,14 @@ Macros (exact, verified on random tapes): FLIP = ABB, NEXT = ABBAAA, PREV = BAAB
 
 Compiler: `sim/compile/sweep.py` turns a Turing machine into one fixed cyclic program (the pointer sweeps one group per pass; the head's group applies the transition). Verified at the reference level against a direct TM after every step (counter 300 steps, echo 50 steps, BB(2,2) to halt), and at the hardware level by an independent simulator (`sim/compile/verify_level0_independent.py`): tape and pointer identical to the reference run after every group visit; BB(2,2) halts with 4 ones in 6 steps; the counter counts.
 
-Overhead: program length O(|Q|²) per group, independent of tape length; one sweep costs O(tape length), so the slowdown is polynomial (linear in tape length per step in the worst case). Constant factor per TM step is not yet implemented (milestone 2 in the compiler task).
+Overhead: **constant per TM step.** The head-following compiler (`sim/compile/follow.py`) makes one pass of the program exactly one TM step: the pointer moves to the head's new group by a guarded-move chain, and the pass word does not depend on tape length. Measured at the hardware level:
+
+| Machine | States | Group width | Ticks per TM step at 12 / 24 / 48 groups |
+|---|---|---|---|
+| counter | 4 | 150 | 120,750 / 120,750 / 120,750 |
+| echo | 3 | 119 | 95,880 / 95,880 / 95,880 |
+| BB(2,2) | 3 | 119 | 74,808 / 74,808 / 74,808 |
+
+Verified twice: by the compiler's own verifier at both levels (`sim/compile/verify_follow.py`), and by an independent hardware simulator that decodes the tape, head and state after every step and compares them with the direct Turing machine (`sim/compile/verify_follow_independent.py`: counter 300 steps and BB(2,2) to halt, at 12, 24 and 48 groups). Program length grows as O(|Q|²) with the number of TM states. Space: one group of 12 + 31·|Q| + 14 logical bits (twice that in cells) per tape cell. Not supported yet: a rule that stays in place and changes state; rings under 3 groups.
 
 Hardware estimate: skip flip-flop, one gate to arm the skip from the cell value, enable gating for flip and move, opcode drives the move direction. Estimated 5–8 transistors; not yet checked against a schematic.
