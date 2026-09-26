@@ -79,26 +79,19 @@ def circular_extent(support, M):
     return width, center, n
 
 
-def classify_disturbance(background, prog_full, k, M, P, flip_pos, n_rows,
-                          tail_window=None):
+def classify_disturbance(background, prog_full, k, M, P, flip_pos, n_rows):
     """Evolve a single-bit disturbance at flip_pos for n_rows rows against
     the fixed background; classify the difference pattern.
 
-    Returns a dict with keys: cls, detail (free text), rows_run,
-    tail_rows (list of diff-rows, length min(tail_window, n_rows+1), for
-    period detection / diagrams), and per-row summary arrays truncated to
-    what's needed.
+    Returns a dict with keys: cls, detail (free text), rows_run.
     """
-    if tail_window is None:
-        tail_window = max(4 * P, 8)
-
     start = list(background)
     start[flip_pos] ^= 1
 
     widths = []
     centers = []  # unwrapped centers
     counts = []
-    tail = []  # rolling deque of diff rows (as tuples) for period detection
+    tail = []  # full history of diff rows (as tuples), for period detection
 
     prev_row = start
     died_at = None
@@ -123,8 +116,6 @@ def classify_disturbance(background, prog_full, k, M, P, flip_pos, n_rows,
             died_at = r
             centers.append(unwrapped)
             tail.append(tuple(d))
-            if len(tail) > tail_window:
-                tail.pop(0)
             break
         if raw_center_prev is None:
             unwrapped = center
@@ -138,8 +129,6 @@ def classify_disturbance(background, prog_full, k, M, P, flip_pos, n_rows,
         raw_center_prev = center
         centers.append(unwrapped)
         tail.append(tuple(d))
-        if len(tail) > tail_window:
-            tail.pop(0)
 
     rows_run = len(counts) - 1  # number of steps actually taken (r=0..rows_run)
 
