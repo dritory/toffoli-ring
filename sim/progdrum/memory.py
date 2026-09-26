@@ -72,9 +72,19 @@ def background_for(k, P, s, bits):
     return bg1, "one", r1, prog_full, M
 
 
+TOGGLE_SAMPLES_PER_SIZE = 3  # toggle-test up to this many survivors per flip-count (2,3,4)
+
+
 def search_one_program(cand):
     """Exhaustive 2-4-bit injection search within the middle 2P-site window.
-    Returns list of surviving localized structures (dicts)."""
+    Returns a lightweight per-program summary (not one full dict per
+    survivor, which would duplicate the M-length background/program arrays
+    tens of thousands of times over): survivor_summaries is a list of
+    (flip_positions, period, max_width) tuples, and toggle_samples runs the
+    (cheap) toggle test immediately, in-worker, on up to
+    3*TOGGLE_SAMPLES_PER_SIZE representative survivors so the whole
+    148k-structure landscape gets a toggle check, not just the handful of
+    globally-cheapest examples."""
     k, P, s = cand["k"], cand["P"], cand["s"]
     bits = [int(c) for c in cand["program"]]
     bg, src, conv, prog_full, M = background_for(k, P, s, bits)
@@ -84,26 +94,28 @@ def search_one_program(cand):
     window = WINDOW_FACTOR * P
     period_cap = PERIOD_CAP_FACTOR * P
 
-    survivors = []
+    survivor_summaries = []
+    toggle_samples = []
     for size in (2, 3, 4):
+        n_this_size = 0
         for combo in itertools.combinations(window_positions, size):
             res = classify_localized(bg, prog_full, k, M, P, list(combo), n_rows,
                                        s=s, window=window, period_cap=period_cap)
             if res["localized"]:
-                survivors.append({
-                    "k": k, "P": P, "s": s, "program": cand["program"],
-                    "bits": bits, "background": bg, "bg_source": src,
-                    "conv_rows": conv, "prog_full": prog_full, "M": M,
-                    "flip_positions": list(combo),
-                    "period": res["period"], "max_width": res["max_width"],
-                    "fastest_left": cand["fastest_left"],
-                    "fastest_right": cand["fastest_right"],
-                })
-    return {"cand": cand, "n_tested": (
-                len(window_positions) * (len(window_positions) - 1) // 2 +
-                len(window_positions) * (len(window_positions) - 1) * (len(window_positions) - 2) // 6 +
-                len(window_positions) * (len(window_positions) - 1) * (len(window_positions) - 2) * (len(window_positions) - 3) // 24),
-            "survivors": survivors}
+                survivor_summaries.append((list(combo), res["period"], res["max_width"]))
+                if n_this_size < TOGGLE_SAMPLES_PER_SIZE:
+                    n_this_size += 1
+                    surv = {"k": k, "P": P, "s": s, "M": M, "background": bg,
+                            "prog_full": prog_full, "flip_positions": list(combo),
+                            "period": res["period"],
+                            "fastest_left": cand["fastest_left"],
+                            "fastest_right": cand["fastest_right"]}
+                    tog = toggle_test(surv)
+                    toggle_samples.append({"flip_positions": list(combo),
+                                            "period": res["period"], "toggle": tog})
+    return {"cand": cand, "bits": bits, "background": bg, "bg_source": src,
+            "conv_rows": conv, "prog_full": prog_full, "M": M,
+            "survivor_summaries": survivor_summaries, "toggle_samples": toggle_samples}
 
 
 def find_mover_offset(bg, prog_full, k, M, P, s, target_cls, target_speed):
@@ -124,12 +136,36 @@ def find_mover_offset(bg, prog_full, k, M, P, s, target_cls, target_speed):
     return best[0], best[1]
 
 
-def toggle_test(surv, max_extra_rows_cap=60):
-    """Fire the program's own fastest right-mover from the left, and its
-    fastest left-mover from the right, at the localized structure `surv`
-    lives in; report whether the post-collision local pattern differs from
-    the pre-collision one (a toggle) or matches it (robust/no toggle), or
-    the structure is destroyed."""
+def _find_settled_state(local_fn, lo, hi, max_period):
+    """Scan rows lo..hi for the first row r with local_fn(r)==local_fn(r+T)
+    ==local_fn(r+2T) for some T in [1,max_period] (T constant, all three in
+    range) -- a genuinely settled, verified-periodic local state, not just a
+    one-off coincidental match. Returns (settled_row, period, pattern) or
+    None. This guards against sampling a single row while a signal is
+    mid-transit through the window (a moving disturbance recirculates in
+    this finite frame, so a naive single-sample before/after comparison can
+    mistake "caught mid-pass" for a permanent change)."""
+    for r in range(lo, hi + 1):
+        pr = local_fn(r)
+        for T in range(1, max_period + 1):
+            if r + 2 * T > hi:
+                break
+            if local_fn(r + T) == pr and local_fn(r + 2 * T) == pr:
+                return r, T, pr
+    return None
+
+
+def toggle_test(surv, settle_rows_cap=None, max_extra_rows_cap=80):
+    """Two-phase test: (1) let the localized structure settle on its own
+    (no signal) and verify its settled, periodic local state; (2) from that
+    settled state, inject the program's own fastest right-mover from the
+    left and, separately, its fastest left-mover from the right, and check
+    whether the local window re-settles to the SAME periodic state (robust)
+    or a DIFFERENT one (a toggle) after the signal has passed, or is wiped
+    out (destroyed). Both settled states are verified via
+    _find_settled_state, not a single-row sample, since a moving
+    disturbance recirculates in this finite frame and a single sample can
+    catch it mid-transit."""
     k, P, s = surv["k"], surv["P"], surv["s"]
     M = surv["M"]
     bg = surv["background"]
@@ -137,12 +173,25 @@ def toggle_test(surv, max_extra_rows_cap=60):
     mb0 = MIDDLE_BLOCK * P
     flip_positions = surv["flip_positions"]
     period = surv["period"] or (4 * P)
+    max_period = max(period * 2, 4)
     win_lo = mb0 - P // 2
     win_hi = mb0 + WINDOW_FACTOR * P + P // 2
-    sample_width = win_hi - win_lo
+    if settle_rows_cap is None:
+        settle_rows_cap = max(8 * P, 4 * max_period + 4)
 
-    def local_pattern(row):
+    # Phase 1: let the bare defect settle (no signal yet).
+    rows0 = run_rows_full(bg, prog_full, k, M, flip_positions, settle_rows_cap, s=s)
+
+    def local0(r):
+        row = rows0[max(0, min(r, len(rows0) - 1))]
         return tuple(row[x % M] ^ bg[x % M] for x in range(win_lo, win_hi))
+
+    settle0 = _find_settled_state(local0, 1, settle_rows_cap - 2 * max_period - 1, max_period)
+    if settle0 is None:
+        return {"left": {"status": "defect_did_not_resettle_in_budget"},
+                "right": {"status": "defect_did_not_resettle_in_budget"}}
+    settle_row0, period0, pat_before = settle0
+    baseline_row = rows0[settle_row0]  # full row: bg + settled defect, no signal
 
     out = {}
     for direction, target_cls, src_block in (("left", "moves_right", MIDDLE_BLOCK - 3),
@@ -158,21 +207,36 @@ def toggle_test(surv, max_extra_rows_cap=60):
         signal_pos = src_block * P + offset
         distance = abs(signal_pos - mb0)
         collision_row = int(distance / max(target_speed, 1e-6)) + 1
-        n_rows = min(collision_row + 8 * P, max_extra_rows_cap * P)
-        if n_rows <= collision_row:
-            out[direction] = {"status": "signal_too_slow_for_row_cap"}
+        n_rows = min(max(collision_row + max_extra_rows_cap, collision_row + 2 * max_period + 2),
+                     max_extra_rows_cap * P)
+        # Phase 2: from the settled baseline (no signal), inject just the
+        # traveling signal and watch it approach and pass the defect.
+        rows2 = run_rows_full(baseline_row, prog_full, k, M, [signal_pos], n_rows, s=s)
+
+        def local2(r, rows2=rows2):
+            row = rows2[max(0, min(r, len(rows2) - 1))]
+            return tuple(row[x % M] ^ bg[x % M] for x in range(win_lo, win_hi))
+
+        after_lo = collision_row + 1
+        after_hi = len(rows2) - 2 * max_period - 1
+        after = _find_settled_state(local2, after_lo, max(after_lo, after_hi), max_period) \
+            if after_hi > after_lo else None
+        if after is None:
+            out[direction] = {
+                "status": "inconclusive (signal did not produce a verified "
+                          "settled state after collision, within the row budget)",
+                "offset": offset, "src_block": src_block, "distance": distance,
+                "collision_row": collision_row,
+            }
             continue
-        rows = run_rows_full(bg, prog_full, k, M, flip_positions + [signal_pos], n_rows, s=s)
-        before_row = min(max(1, 3 * period), max(1, collision_row - 2 * P))
-        after_row = min(len(rows) - 1, collision_row + 6 * P)
-        pat_before = local_pattern(rows[before_row])
-        pat_after = local_pattern(rows[after_row])
+        after_row, after_T, pat_after = after
         destroyed = (sum(pat_after) == 0)
         same = (pat_after == pat_before)
         out[direction] = {
             "status": "destroyed" if destroyed else ("same" if same else "toggled"),
             "offset": offset, "src_block": src_block, "distance": distance,
-            "collision_row": collision_row, "before_row": before_row, "after_row": after_row,
+            "collision_row": collision_row, "after_settled_row": after_row,
+            "after_period": after_T,
             "pat_before": "".join("#" if b else "." for b in pat_before),
             "pat_after": "".join("#" if b else "." for b in pat_after),
         }
@@ -205,30 +269,47 @@ def main():
         for i, res in enumerate(pool.imap(search_one_program, cands, chunksize=1)):
             results.append(res)
             if (i + 1) % 20 == 0 or (i + 1) == len(cands):
-                n_surv_total = sum(len(r["survivors"]) for r in results)
+                n_surv_total = sum(len(r["survivor_summaries"]) for r in results)
                 print(f"[memory] {i+1}/{len(cands)} programs searched "
                       f"({n_surv_total} localized structures so far, {time.time()-t0:.1f}s)",
                       flush=True)
 
     print(f"[memory] search done ({time.time()-t0:.1f}s)", flush=True)
 
-    all_survivors = []
+    n_total_structures = sum(len(r["survivor_summaries"]) for r in results)
+    n_progs_with = sum(1 for r in results if r["survivor_summaries"])
+    print(f"[memory] {n_total_structures} total localized structures found "
+          f"across {n_progs_with} programs ({time.time()-t0:.1f}s)", flush=True)
+
+    # toggle-test tallies across ALL sampled survivors (not just the cheapest)
+    toggle_tally = {}  # status -> count, per direction
+    toggle_hits = []   # (cost_key, r, sample) for every "toggled" result found
     for r in results:
-        all_survivors.extend(r["survivors"])
-    print(f"[memory] {len(all_survivors)} total localized structures found "
-          f"across {sum(1 for r in results if r['survivors'])} programs "
-          f"({time.time()-t0:.1f}s)", flush=True)
+        cand = r["cand"]
+        cost = (cand["P"], cand["program"].count("1"))
+        for sample in r["toggle_samples"]:
+            for direction in ("left", "right"):
+                status = sample["toggle"].get(direction, {}).get("status", "?")
+                toggle_tally.setdefault(direction, {})
+                toggle_tally[direction][status] = toggle_tally[direction].get(status, 0) + 1
+                if status == "toggled":
+                    toggle_hits.append((cost, r, sample, direction))
+    toggle_hits.sort(key=lambda h: h[0])
 
-    # cheapest localized structures overall, and per k
-    def gadget_cost_key(g):
-        return (g["P"], sum(g["bits"]), len(g["flip_positions"]))
-    all_survivors.sort(key=gadget_cost_key)
+    # cheapest programs (by P, then popcount) that have >=1 localized structure
+    results_with = [r for r in results if r["survivor_summaries"]]
 
-    write_report(cands, results, all_survivors, t0, used_fallback, len(strict_cands))
-    return cands, results, all_survivors
+    def prog_cost_key(r):
+        return (r["cand"]["P"], r["cand"]["program"].count("1"))
+    results_with.sort(key=prog_cost_key)
+
+    write_report(cands, results, results_with, toggle_tally, toggle_hits, t0,
+                 used_fallback, len(strict_cands))
+    return cands, results
 
 
-def write_report(cands, results, all_survivors, t0, used_fallback, n_strict):
+def write_report(cands, results, results_with, toggle_tally, toggle_hits, t0,
+                  used_fallback, n_strict):
     lines = ["# Task 2c: memory search\n"]
     if used_fallback:
         lines.append(
@@ -267,65 +348,96 @@ def write_report(cands, results, all_survivors, t0, used_fallback, n_strict):
         "affordable: most few-bit patches die or spread within a handful "
         "of rows).\n"
     )
+    n_total_structures = sum(len(r["survivor_summaries"]) for r in results)
     lines.append(f"\nTotal localized (memory-candidate) structures found: "
-                 f"{len(all_survivors)}, across "
-                 f"{len(set((g['k'], g['s'], g['program']) for g in all_survivors))} "
-                 f"distinct programs (out of {len(cands)} candidates tested).\n")
+                 f"{n_total_structures}, across {len(results_with)} distinct "
+                 f"programs (out of {len(cands)} candidates tested).\n")
 
     by_k = {2: [], 3: []}
-    for g in all_survivors:
-        by_k[g["k"]].append(g)
-    lines.append("\n| k | programs tested (both movers) | programs with >=1 localized structure | "
+    for r in results:
+        by_k[r["cand"]["k"]].extend(r["survivor_summaries"])
+    lines.append("\n| k | programs tested | programs with >=1 localized structure | "
                  "total localized structures |\n|---|---|---|---|\n")
     for k in (2, 3):
         n_tested_k = sum(1 for c in cands if c["k"] == k)
-        n_with = len(set((g["s"], g["program"]) for g in by_k[k]))
+        n_with = sum(1 for r in results_with if r["cand"]["k"] == k)
         lines.append(f"| {k} | {n_tested_k} | {n_with} | {len(by_k[k])} |\n")
 
-    lines.append("\n## Cheapest localized structures\n")
-    seen_progs = set()
-    cheapest_examples = []
-    for g in all_survivors:
-        key = (g["k"], g["s"], g["program"])
-        if key in seen_progs:
-            continue
-        seen_progs.add(key)
-        cheapest_examples.append(g)
-        if len(cheapest_examples) >= 8:
-            break
+    lines.append(
+        "\n## Toggle test, tallied over every sampled structure\n\n"
+        f"Every localized structure found was toggle-tested in-worker "
+        f"(up to {3 * TOGGLE_SAMPLES_PER_SIZE} representative samples per "
+        "program, spread over the 2/3/4-flipped-site sizes), using the "
+        "two-phase protocol: let the bare defect settle, then fire the "
+        "program's own fastest available mover at it from the side it "
+        "actually travels toward, and verify (via repeated-period checking, "
+        "not a single-row sample) whether the local window re-settles to "
+        "the SAME periodic state, a DIFFERENT one (toggled), is wiped out "
+        "(destroyed), or never re-settles within the row budget "
+        "(inconclusive).\n"
+    )
+    lines.append("\n| signal direction | " + " | ".join(sorted({
+        st for d in toggle_tally for st in toggle_tally[d]})) + " |\n")
+    all_statuses = sorted({st for d in toggle_tally for st in toggle_tally[d]})
+    lines.append("|---|" + "---|" * len(all_statuses) + "\n")
+    for direction in ("left", "right"):
+        row = [str(toggle_tally.get(direction, {}).get(st, 0)) for st in all_statuses]
+        lines.append(f"| {direction} | " + " | ".join(row) + " |\n")
 
-    lines.append("| k | s | P | ones | program | flip positions (offset in window) | period (rows) | max width |\n")
-    lines.append("|---|---|---|---|---|---|---|---|\n")
-    for g in cheapest_examples:
-        mb0 = MIDDLE_BLOCK * g["P"]
-        offs = [fp - mb0 for fp in g["flip_positions"]]
-        n_ones = sum(g["bits"])
-        lines.append(f"| {g['k']} | {g['s']} | {g['P']} | {n_ones} | `{g['program']}` | "
-                     f"{offs} | {g['period']} | {g['max_width']:.1f} |\n")
+    lines.append(f"\n**Genuine toggles found: {len(toggle_hits)}** (signal from "
+                 "the right, since that is the only direction any "
+                 "memory-and-mover program supports).\n")
 
-    # spacetime diagrams + toggle test for the top few cheapest examples
+    lines.append("\n## Cheapest localized structures (one row per distinct program)\n")
+    lines.append("| k | s | P | ones | program | cheapest flips (offset in window) | period (rows) | max width | n localized (this program) |\n")
+    lines.append("|---|---|---|---|---|---|---|---|---|\n")
+    for r in results_with[:8]:
+        cand = r["cand"]
+        combo, period, width = min(r["survivor_summaries"], key=lambda t: len(t[0]))
+        mb0 = MIDDLE_BLOCK * cand["P"]
+        offs = [fp - mb0 for fp in combo]
+        lines.append(f"| {cand['k']} | {cand['s']} | {cand['P']} | {cand['program'].count('1')} | "
+                     f"`{cand['program']}` | {offs} | {period} | {width:.1f} | "
+                     f"{len(r['survivor_summaries'])} |\n")
+
+    # spacetime diagrams + toggle test for the top few cheapest examples,
+    # plus the cheapest genuine TOGGLE found anywhere in the sampled set.
     lines.append("\n## Spacetime diagrams and toggle test (cheapest examples)\n")
-    n_diagrams = min(4, len(cheapest_examples))
-    for g in cheapest_examples[:n_diagrams]:
-        P, k, s = g["P"], g["k"], g["s"]
-        M = g["M"]
-        bg = g["background"]
-        prog_full = g["prog_full"]
+    n_diagrams = min(4, len(results_with))
+    shown = []
+    for r in results_with[:n_diagrams]:
+        combo, period, width = min(r["survivor_summaries"], key=lambda t: len(t[0]))
+        shown.append((r, combo, period))
+    if toggle_hits:
+        cost, r, sample, direction = toggle_hits[0]
+        shown.append((r, sample["flip_positions"], sample["period"]))
+        lines.append(f"\n(The last example below is the cheapest genuine TOGGLE found "
+                     f"anywhere in the sampled set: P={cost[0]}, ones={cost[1]}.)\n")
+
+    for r, combo, period in shown:
+        cand = r["cand"]
+        P, k, s = cand["P"], cand["k"], cand["s"]
+        M = r["M"]
+        bg = r["background"]
+        prog_full = r["prog_full"]
         n_rows = min(20 * P, 400)
-        rows = run_rows_full(bg, prog_full, k, M, g["flip_positions"], n_rows, s=s)
+        rows = run_rows_full(bg, prog_full, k, M, combo, n_rows, s=s)
         mb0 = MIDDLE_BLOCK * P
         win_lo = mb0 - P
         win_hi = mb0 + WINDOW_FACTOR * P + P
-        lines.append(f"\n### k={k} s={s} P={P} ones={sum(g['bits'])} p=`{g['program']}` "
-                     f"flips={[fp - mb0 for fp in g['flip_positions']]} period={g['period']}\n")
+        lines.append(f"\n### k={k} s={s} P={P} ones={cand['program'].count('1')} p=`{cand['program']}` "
+                     f"flips={[fp - mb0 for fp in combo]} period={period}\n")
         stride = max(1, len(rows) // 100)
         diagram = []
-        for r in range(0, len(rows), stride):
-            d = "".join("#" if (rows[r][x % M] ^ bg[x % M]) else "." for x in range(win_lo, win_hi))
-            diagram.append(f"r={r:4d}: {d}")
+        for row_i in range(0, len(rows), stride):
+            d = "".join("#" if (rows[row_i][x % M] ^ bg[x % M]) else "." for x in range(win_lo, win_hi))
+            diagram.append(f"r={row_i:4d}: {d}")
         lines.append("```\n" + "\n".join(diagram) + "\n```\n")
 
-        tog = toggle_test(g)
+        surv = {"k": k, "P": P, "s": s, "M": M, "background": bg, "prog_full": prog_full,
+                "flip_positions": combo, "period": period,
+                "fastest_left": cand["fastest_left"], "fastest_right": cand["fastest_right"]}
+        tog = toggle_test(surv)
         lines.append("Toggle test (fire this program's own fastest right-mover from the "
                      "left, and fastest left-mover from the right, at this structure):\n")
         for direction in ("left", "right"):
