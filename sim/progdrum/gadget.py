@@ -152,16 +152,40 @@ def classify_disturbance(background, prog_full, k, M, P, flip_pos, n_rows, s=1):
     width_head = sum(widths[:head_end]) / head_end
     width_tail = sum(widths[tail_start:]) / (n_pts - tail_start)
 
-    late_lo = max(0, n_pts - max(2, n_pts // 2))
-    disp = centers[-1] - centers[late_lo]
-    span = (n_pts - 1) - late_lo
-    velocity = disp / span if span > 0 else 0.0
+    # Robust velocity: mean of per-row deltas over the tail half of the run,
+    # plus a same-sign-fraction consistency check. A genuine translating
+    # structure has a fairly constant per-row shift; a chaotic/oscillating
+    # blob (common once its width approaches M/2-M/3) instead makes the
+    # circular-arc center jump back and forth by large amounts, which a
+    # naive two-point (endpoint) velocity estimate can badly misread as a
+    # large, spurious "speed". Requiring per-row consistency catches this.
+    deltas = [centers[i] - centers[i - 1] for i in range(1, n_pts)]
+    late_lo = max(0, len(deltas) - max(2, len(deltas) // 2))
+    late_deltas = deltas[late_lo:]
+    velocity = sum(late_deltas) / len(late_deltas) if late_deltas else 0.0
+    if late_deltas:
+        same_sign = sum(1 for d in late_deltas
+                         if (d > 0) == (velocity > 0) or abs(d) < 1e-9)
+        consistency = same_sign / len(late_deltas)
+    else:
+        consistency = 1.0
+    coherent_motion = consistency >= 0.7
 
     GROW_THRESH = max(4 * P, 3 * width_head + 1)
-    if width_tail > GROW_THRESH and width_tail > 1.4 * max(width_head, 1):
+    GROW_ABS = M / 3.0
+    if (width_tail > GROW_ABS) or (width_tail > GROW_THRESH and width_tail > 1.4 * max(width_head, 1)):
         return {
             "cls": "grows",
             "detail": f"width_head={width_head:.1f} width_tail={width_tail:.1f}",
+            "rows_run": rows_run,
+            "velocity": velocity,
+        }
+    if not coherent_motion:
+        return {
+            "cls": "grows",
+            "detail": (f"fallback (incoherent motion): width_head={width_head:.1f} "
+                       f"width_tail={width_tail:.1f} v_mean={velocity:.4f} "
+                       f"consistency={consistency:.2f}"),
             "rows_run": rows_run,
             "velocity": velocity,
         }
