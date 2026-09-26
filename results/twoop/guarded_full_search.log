@@ -15,3 +15,5 @@ encoding x rest combos: 49
   pairs done 325/1017  rows=15925  winners=55  elapsed=492.7s
   pairs done 350/1017  rows=17150  winners=57  elapsed=519.8s
   pairs done 375/1017  rows=18375  winners=61  elapsed=548.4s
+  pairs done 400/1017  rows=19600  winners=69  elapsed=570.8s
+  pairs done 425/1017  rows=20825  winners=69  elapsed=593.4s
