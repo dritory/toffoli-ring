@@ -4,6 +4,6 @@ The fewest discrete components (transistors, resistors, capacitors, diodes; no I
 
 Current best: 11 components (6 transistors, 3 resistors, 2 capacitors; master capacitor must be several times larger than the slave, since they share charge), the two-instruction machine (STATUS.md, sim/budget/).
 
-Capacitor-free (static latches, for the first prototype): 20 components (14 transistors, 6 resistors), sim/budget/static/.
+Capacitor-free (static latches, for the first prototype): 20 components (14 transistors, 6 resistors), sim/budget/static/. Pure transistor, fully complementary CMOS: 28 transistors, no ratio requirement, near-zero standby power, sim/budget/cmos/.
 
 Open: (1) minimality proof, (2) physical build, (3) hand-written demos visible at wall-clock speed.
