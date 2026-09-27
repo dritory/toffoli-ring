@@ -7,3 +7,11 @@ Current best: 11 components (6 transistors, 3 resistors, 2 capacitors; master ca
 Capacitor-free (static latches, for the first prototype): 20 components (14 transistors, 6 resistors), sim/budget/static/. Pure transistor, fully complementary CMOS: 28 transistors, no ratio requirement, near-zero standby power, sim/budget/cmos/.
 
 Open: (1) minimality proof, (2) physical build, (3) hand-written demos visible at wall-clock speed.
+
+## Prior art (checked 2026-09-27, web search only)
+
+* Qibec (Michai Ramakers, 2016): 1-bit, 1-instruction discrete-transistor CPU (invert, then jump if zero). About 650 transistors in total; the core is 8 transistors, the rest is address bus and program counter.
+* Carbon-nanotube OISC (2013): 178 transistors.
+* Hobby builds: subleq CPU about 680 transistors (2025), TraNOR 1897 MOSFETs, Megaprocessor 15,300.
+
+Consequence: "smallest CPU core" is not a clear record (Qibec's core is 8 transistors). The defensible claim is about the whole machine minus bit storage: this design needs no address registers or program counter because the data pointer and the program advance by ±1 / +1 only. That shifts cost into the memory's shift mechanics, which must be stated on the plaque.
