@@ -67,3 +67,30 @@ if __name__ == '__main__':
                 if not good: break
             print('  R=%3.0fk %-7s ok=%s  B dark: A lit=%s I=%.2f mA; B lit: A lit=%s V=%.1f V'
                   % (R / 1e3, mode, worst[0], worst[1][0][0], worst[1][0][1] * 1e3, worst[1][1][0], worst[1][1][2]))
+
+def one_lamp_memory_with_ldr_set(VPHI=300.0):
+    """Can the one-lamp hysteresis memory (bias VB through Rb) be SET through a series LDR from the
+    phi2 rail?  Needs V_open(set, LDR lit) >= Vs_max + dark_dv_max = 130 V + 10 V margin while
+    V_open(LDR dark, phi2 high) <= Vs_min = 85 V (else it strikes on its own every tick), and
+    the bias must hold the lamp lit (>= lo of window()).  Grid search over Rb, Rset, VB."""
+    IMAX = 2e-3
+    for Rd in (1e6, 10e6):
+        best = None
+        for Rb in (20e3, 35e3, 50e3, 80e3, 120e3):
+            lo, hi = window(Rb)
+            for VB in [lo + k * 0.5 for k in range(0, int(max(hi - lo, 0) / 0.5) + 1)]:
+                for Rs in [5e3 * 1.25 ** k for k in range(0, 30)]:
+                    Rlit, Rdk = Rs + 10e3, Rs + Rd          # worst lit LDR 10k / dark LDR at Rd
+                    th = lambda Rx: (VB / Rb + VPHI / Rx) / (1 / Rb + 1 / Rx)
+                    strike_margin = th(Rlit) - 140.0
+                    dark_margin = 85.0 - th(Rdk)
+                    Iaft = (th(Rlit) - 62) / (Rb * Rlit / (Rb + Rlit))
+                    if Iaft > IMAX: continue
+                    m = min(strike_margin, dark_margin)
+                    if best is None or m > best[0]: best = (m, Rb, Rs, VB, strike_margin, dark_margin, (th(Rlit) - 62) / (Rb * Rlit / (Rb + Rlit)))
+        if best is None: print('  LDR dark %.0f Mohm: no (Rb, Rset, VB) keeps the lit current below 2 mA' % (Rd / 1e6)); continue
+        print('  LDR dark %.0f Mohm: best min-margin %.1f V (Rb=%.0fk Rset=%.0fk VB=%.1f: strike margin %.1f V, dark margin %.1f V, '
+              'lit current after strike %.1f mA)' % (Rd / 1e6, best[0], best[1] / 1e3, best[2] / 1e3, best[3], best[4], best[5], best[6] * 1e3))
+
+if __name__ == '__main__' and len(sys.argv) > 1 and sys.argv[1] == 'set':
+    one_lamp_memory_with_ldr_set()

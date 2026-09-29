@@ -1,0 +1,3 @@
+fast T=1.00: truth 40/40, random 500/500 passed, worst strobe glitch 5 ms, worst strobe lateness (before 0.9T) 5 ms, 550s
+weak T=1.00: truth 40/40, random 500/500 passed, worst strobe glitch 5 ms, worst strobe lateness (before 0.9T) 5 ms, 549s
+hot T=1.00: truth 40/40, random 500/500 passed, worst strobe glitch 5 ms, worst strobe lateness (before 0.9T) 5 ms, 526s

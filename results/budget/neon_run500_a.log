@@ -1,0 +1,4 @@
+nom T=1.00: truth 40/40, random 500/500 passed, worst strobe glitch 5 ms, worst strobe lateness (before 0.9T) 5 ms, 595s
+slow T=1.00: truth 40/40, random 500/500 passed, worst strobe glitch 5 ms, worst strobe lateness (before 0.9T) 20 ms, 591s
+v1 T=1.00: truth 40/40, random 500/500 passed, worst strobe glitch 5 ms, worst strobe lateness (before 0.9T) 20 ms, 545s
+v3 T=1.00: truth 40/40, random 500/500 passed, worst strobe glitch 5 ms, worst strobe lateness (before 0.9T) 20 ms, 552s

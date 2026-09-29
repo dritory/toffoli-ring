@@ -1,0 +1,15 @@
+nom corner, optical crosstalk 1e-06            truth 40/40 random 30/30
+nom corner, optical crosstalk 3e-06            truth 40/40 random 30/30
+nom corner, optical crosstalk 1e-05            truth 40/40 random 30/30
+nom corner, optical crosstalk 3e-05            truth 40/40 random 30/30
+nom corner, optical crosstalk 1e-04            truth 40/40 random 30/30
+slow corner, optical crosstalk 1e-06           truth 40/40 random 30/30
+slow corner, optical crosstalk 3e-06           truth 40/40 random 30/30
+slow corner, optical crosstalk 1e-05           truth 40/40 random 30/30
+slow corner, optical crosstalk 3e-05           truth 40/40 random 30/30
+slow corner, optical crosstalk 1e-04           truth 40/40 random 30/30
+weak corner, optical crosstalk 1e-06           truth 40/40 random 30/30
+weak corner, optical crosstalk 3e-06           truth 40/40 random 30/30
+weak corner, optical crosstalk 1e-05           truth 40/40 random 30/30
+weak corner, optical crosstalk 3e-05           truth 40/40 random 30/30
+weak corner, optical crosstalk 1e-04           truth 40/40 random 30/30

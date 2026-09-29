@@ -1,0 +1,13 @@
+none 1 0 1 None 10.3
+none 1 0 2 None 38.3
+none~ 1 0 1 None 11.2
+none~ 1 0 2 None 25.8
+(x,xbar) 2 0 1 None 10.5
+(x,xbar) 2 0 2 None 23.5
+(x,xbar) 2 1 1 None 12.2
+(x,xbar) 2 1 2 None 24.5
+(x,xbar)~ 2 0 1 None 12.1
+(x,xbar)~ 2 0 2 None 21.7
+(x,xbar)~ 2 1 1 None 13.3
+(x,xbar)~ 2 1 2 None 24.9
+(x,1) 2 0 1 (1, 0, 3, 2, 0, 2, 3, 1, 1, 0, 3, 2, 0, 2, 0, 3) 12.1

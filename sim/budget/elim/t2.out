@@ -1,0 +1,8 @@
+FT4 NOT (2, 'none', 1, 0) (0, 3) 0.0
+FT4 RESET (3, 'none', 1, 0) (0, 0, 3) 0.0
+FT4 CNOT+1 None None 17.1
+FT4 TOFF+1+2 None None 22.0
+FT4 CMOV+ (6, 'none~', 1, 0) (0, 1, 0, 3, 0, 3) 0.5
+FT4 CMOV- (6, 'none~', 1, 0) (0, 2, 0, 3, 0, 3) 0.4
+FT4 NEXT (1, 'none', 1, 0) (1,) 0.0
+FT4 PREV (1, 'none', 1, 0) (2,) 0.0

@@ -12,10 +12,13 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'blockskip'))
 import ref as R
 from model import Net
 
-RB = 330e3   # ballast of every lamp
+def ballast(VP, I=0.5e-3):
+    """lamp ballast for current I at burning voltage 62 V, rounded to 10k"""
+    return round((VP - 62.0) / I / 1e4) * 1e4
 
-def netlist(variant='clamp'):
+def netlist(variant='clamp', VP=250.0, I=0.5e-3):
     E = []
+    RB = ballast(VP, I)
     R_ = lambda a, b: E.append(('R', a, b, RB))
     # skip flag S: LS lit = S=1, LSb lit = S=0 (NOR latch)
     R_('VP', 's'); E.append(('L', 's', 'GND', 'LS'))
@@ -38,6 +41,8 @@ def netlist(variant='clamp'):
         E.append(('LDR', 'x' + op, 'GND', 's' + op, ['LS']))
     return E
 
+DESIGN = dict(VP=300.0, I=0.75e-3, phi_start=0.4)   # supply, lamp current, phi2 rail starts at 0.4 T
+
 DRIVERS = ['VP', 'PHI', 'F', 'N', 'P', 'K', 'MK', 'MB', 'r']
 
 def counts(E):
@@ -51,8 +56,8 @@ class Cpu:
     """tick(S, op, r) -> (toggle, mp, mm, S').  Analog time-domain simulation of one tick
     period T (s); the analog state (lamps, LDR conductances) carries over between ticks."""
     def __init__(self, variant='clamp', T=0.6, phi_start=0.4, skew=0.0, seed=0, Rsrc=1e3,
-                 xtalk=0.0, mode='nom', over=None, dark=False, dt=5e-3, VP=250.0):
-        self.E = netlist(variant)
+                 xtalk=0.0, mode='nom', over=None, dark=False, dt=5e-3, VP=250.0, I=0.5e-3):
+        self.E = netlist(variant, VP, I)
         drv = {d: (0 if d in ('VP',) else Rsrc) for d in DRIVERS if d != 'MK'}
         if variant != 'clamp': drv['MK'] = Rsrc
         self.net = Net(self.E, drv, mode=mode, seed=seed, over=over, xtalk=xtalk, dt=dt, dark=dark, VP=VP)

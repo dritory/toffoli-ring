@@ -1,0 +1,5 @@
+gated-reset variant {'lamps': 8, 'ldrs': 8, 'resistors': 8, 'diodes': 2, 'total': 26} truth 40/40 random 100/100 (nominal, T=1.0)
+Rlit = 10 k (all LDRs): hold 5.3 | strike 44.0 | quench 46.8 | nostrike 76.9 | Imax 0.8
+Rlit = 30 k (all LDRs): hold 5.3 | strike 44.0 | quench 31.7 | nostrike 61.7 | Imax 0.8
+Rlit = 60 k (all LDRs): hold 5.3 | strike 44.0 | quench 11.5 | nostrike 41.5 | Imax 0.8
+Rlit = 100 k (all LDRs): hold 5.3 | strike 44.0 | quench -11.7 | nostrike 18.3 | Imax 0.8

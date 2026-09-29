@@ -1,0 +1,15 @@
+nom corner, line skew up to 3 ms               truth 40/40 random 30/30
+nom corner, line skew up to 30 ms              truth 40/40 random 30/30
+nom corner, line skew up to 100 ms             truth 40/40 random 30/30
+nom corner, line skew up to 200 ms             truth 40/40 random 30/30
+nom corner, line skew up to 400 ms             truth 40/40 random 30/30
+fast corner, line skew up to 3 ms              truth 40/40 random 30/30
+fast corner, line skew up to 30 ms             truth 40/40 random 30/30
+fast corner, line skew up to 100 ms            truth 40/40 random 30/30
+fast corner, line skew up to 200 ms            truth 40/40 random 30/30
+fast corner, line skew up to 400 ms            truth 40/40 random 30/30
+slow corner, line skew up to 3 ms              truth 40/40 random 30/30
+slow corner, line skew up to 30 ms             truth 40/40 random 30/30
+slow corner, line skew up to 100 ms            truth 40/40 random 30/30
+slow corner, line skew up to 200 ms            truth 40/40 random 30/30
+slow corner, line skew up to 400 ms            truth 40/40 random 30/30

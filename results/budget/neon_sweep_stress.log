@@ -1,0 +1,13 @@
+slow + LDR memory effect Rdark=0.5M            truth 40/40 random 11/30
+slow + LDR memory effect Rdark=0.3M            truth 38/40 random 5/30
+slow + Rdark=0.5M, lamp current 1.0 mA         truth 40/40 random 30/30
+slow + Rdark=0.3M, lamp current 1.0 mA         truth 40/40 random 11/30
+weak + aged lamps (Vs 120, Rlit x3)            truth 40/40 random 30/30
+slow + aged lamps (Vs 115)                     truth 40/40 random 30/30
+slow, line source impedance 1k                 truth 40/40 random 30/30
+slow, line source impedance 5k                 truth 40/40 random 30/30
+slow, line source impedance 20k                truth 40/40 random 30/30
+nom, supply x0.90                              truth 40/40 random 30/30
+nom, supply x0.95                              truth 40/40 random 30/30
+nom, supply x1.05                              truth 40/40 random 30/30
+nom, supply x1.10                              truth 40/40 random 30/30

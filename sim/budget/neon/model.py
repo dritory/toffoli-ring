@@ -27,7 +27,7 @@ RANGES = {   # (lo, hi)  independent per instance
     'rd': (1e3, 3e3),       # dynamic resistance
     'Iext': (20e-6, 100e-6),# extinction current
     'td0': (1e-3, 20e-3),   # strike delay at 20 % overvoltage
-    'Rd': (0.5e6, 5e6),     # LDR dark resistance
+    'Rd': (1e6, 10e6),      # LDR dark resistance (memory-effect stress: 0.5e6, see report)
     'Rlit': (1e3, 10e3),    # LDR lit resistance at 0.5 mA lamp current
     'gamma': (0.7, 0.9),
     'tau_r': (5e-3, 20e-3),
@@ -73,7 +73,8 @@ class Net:
                 self.D.append((ix(e[1]), ix(e[2]), P('Vf')))
             elif e[0] == 'L':
                 self.lname[e[3]] = len(self.L)
-                self.L.append(dict(a=ix(e[1]), b=ix(e[2]), Vs=P('Vs') + (P('dark_dv') if dark else 0.0),
+                vs0 = P('Vs'); dv = P('dark_dv')
+                self.L.append(dict(a=ix(e[1]), b=ix(e[2]), Vs=vs0 + (dv if dark else 0.0), Vs0=vs0, dv=dv,
                                    Vb=P('Vb'), g=1 / P('rd'), Iext=P('Iext'),
                                    td0=P('td0') * (3.0 if dark else 1.0), name=e[3]))
             elif e[0] == 'LDR':

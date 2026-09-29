@@ -1,0 +1,1 @@
+slow I=1.00 mA Rdark=500000.0: T=1.00: truth 40/40, random 500/500 passed, worst strobe glitch 5 ms, worst strobe lateness (before 0.9T) 25 ms, 527s
