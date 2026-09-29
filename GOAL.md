@@ -26,3 +26,12 @@ Open: (1) minimality proof, (2) physical build, (3) hand-written demos visible a
 * Hobby builds: subleq CPU about 680 transistors (2025), TraNOR 1897 MOSFETs, Megaprocessor 15,300.
 
 Consequence: "smallest CPU core" is not a clear record (Qibec's core is 8 transistors). The defensible claim is about the whole machine minus bit storage: this design needs no address registers or program counter because the data pointer and the program advance by ±1 / +1 only. That shifts cost into the memory's shift mechanics, which must be stated on the plaque.
+
+## Prior art, second search (2026-09-29)
+
+* Neon lamp + photoconductor logic: NOR, flip-flops and ring counters date from the 1950s (Electronics, April 1953); modern makers have rebuilt gates and a D flip-flop.
+* A CPU-less computer whose only ALU is one NOR gate made of 2 transistors and 1 resistor; sequencing lives in ROM and counters.
+* Minimal TTL chip-count CPUs (CSCvon8, 17 chips; "1 square inch TTL CPU").
+* Closest architecture, from memory, not re-checked here: Motorola MC14500B, a 1-bit industrial control unit with a skip-if-zero instruction, run from an external program counter as a cyclic PLC-style scan.
+
+Elimination view: known designs drop the ALU (NOR-gate computer), the instruction set (OISC), or the core size (Qibec). None found drops all of: program counter (program is a physical loop), data addresses (tape with ±1 moves), ALU (toggle only), and jumps (block skip plus the structured program theorem), leaving one bit of CPU state. That combination is the candidate novelty; claim it as "not found in prior art searched", not as a first.
