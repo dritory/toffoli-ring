@@ -19,6 +19,12 @@ Separate from the minimal-computer research. Goal: an educational and art piece.
 * Single-cycle Harvard RISC: each clock fetches one instruction from program memory and executes it; the instruction word drives control directly, so single-step shows one whole instruction per press.
 * Control decode as a through-hole diode matrix with an LED per control line, so the decoding is visible and hand-traceable.
 
+## Assembly (decided, pending user confirmation)
+
+* JLCPCB assembles all SMD parts: every LED (0805 or 1206, a few hundred), resistors, memory chips, buffers, display driving, ESP32 module, power.
+* Only the visible logic chips are through-hole: about 20–25 DIP 74HC chips in sockets, hand-soldered (or JLC through-hole assembly). About 400–500 joints including sockets.
+* The diode-matrix decoder: through-hole diodes if the look is worth about 200 joints, otherwise SMD diodes in a labelled grid.
+
 ## Proposed architecture (to be confirmed by the emulator work below)
 
 * Harvard: program memory 1K × 16-bit words (SRAM loaded by the ESP32), data memory 256 bytes (SRAM), display 32 bytes as latches with LEDs on their outputs.
