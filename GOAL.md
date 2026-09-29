@@ -2,6 +2,11 @@
 
 The fewest components for a computer that runs structured programs directly. By the structured program theorem (Böhm–Jacopini) every program is one loop of if-blocks; the program ring is that loop, and the CPU provides the if-blocks with a block skip ("if the cell is 0, skip until the next MARK"). Instructions: FLIP, NEXT, PREV, IFZ, MARK. Each instruction costs one tick; each outer-loop iteration costs one ring pass. Data memory, program storage, clock drive and power are excluded from the count.
 
+Current results (results/budget/blockskip.md, verified: truth table, 500 random programs tick by tick, DC voltage checks):
+* NMOS with resistor pull-ups: 10 transistors, 6 resistors, plus 6 indicator LEDs (5 V, logic-level NMOS).
+* LED diode-transistor logic: 3 transistors, 9 resistors, 15 LEDs that do the logic (12 V, standard-threshold NMOS).
+* Programs: 8-bit counter 40 ticks per increment, echo 10 ticks, 8-bit copy 80 ticks, BB(2,2) 262 ticks per Turing-machine step.
+
 History and earlier results below.
 
 ## Earlier goal
