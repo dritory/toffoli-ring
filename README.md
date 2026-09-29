@@ -8,6 +8,7 @@ Is the sequential Toffoli ring `s[i+k] ^= s[i] & s[i+1]` (i = 0..N-1, sequential
 * `HANDOVER-A.md` — drum with one bit of head state.
 * `HANDOVER-B.md` — two-instruction pointer machines.
 * `HANDOVER-D.md` — the 4-, 8-, 16- and 32-transistor computers.
+* `HANDOVER-E.md` — the visible 8-bit educational computer on an A4 board.
 * `sim/` — simulator (`ring.py`), exact cycle enumerator (`cycles.c`), sampled periods (`sample.c`), word catalogs, background search, seed patterns.
 * `results/` — raw sweep output, word classifications, `seeds.md` (spacetime diagrams of every structure mentioned).
 
