@@ -1,5 +1,11 @@
 # Goal
 
+The fewest components for a computer that runs structured programs directly. By the structured program theorem (Böhm–Jacopini) every program is one loop of if-blocks; the program ring is that loop, and the CPU provides the if-blocks with a block skip ("if the cell is 0, skip until the next MARK"). Instructions: FLIP, NEXT, PREV, IFZ, MARK. Each instruction costs one tick; each outer-loop iteration costs one ring pass. Data memory, program storage, clock drive and power are excluded from the count.
+
+History and earlier results below.
+
+## Earlier goal
+
 The fewest discrete components (transistors, resistors, capacitors, diodes; no ICs or relays) that make a universal computer: runs any program with constant-factor slowdown relative to a Turing machine, with runtime I/O through memory cells. Data memory, program storage, clock drive and power are excluded.
 
 Current best: 11 components (6 transistors, 3 resistors, 2 capacitors; master capacitor must be several times larger than the slave, since they share charge), the two-instruction machine (STATUS.md, sim/budget/).
