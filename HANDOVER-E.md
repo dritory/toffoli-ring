@@ -12,12 +12,19 @@ Separate from the minimal-computer research. Goal: an educational and art piece.
 * Loader: ESP32 in a marked corner, web page upload of assembled programs, not part of the computer (bus-isolated while running).
 * Every register, both buses, flags, program counter, instruction register, ALU inputs and outputs, and each control line has an LED. Silkscreen labels each block like a textbook diagram.
 
+## Build rules (decided)
+
+* Front side: through-hole parts that make up the visible CPU (kit-friendly), each with its LEDs. Back side: SMD support parts (memory chips, buffers, display driving, ESP32).
+* The ESP32 never computes program results. It only loads programs, drives the clock (stop, single-step, speed), and observes the buses to show the current instruction and source line on a phone. The silkscreen says so.
+* Single-cycle Harvard RISC: each clock fetches one instruction from program memory and executes it; the instruction word drives control directly, so single-step shows one whole instruction per press.
+* Control decode as a through-hole diode matrix with an LED per control line, so the decoding is visible and hand-traceable.
+
 ## Proposed architecture (to be confirmed by the emulator work below)
 
 * Harvard: program memory 1K × 16-bit words (SRAM loaded by the ESP32), data memory 256 bytes (SRAM), display 32 bytes as latches with LEDs on their outputs.
 * Registers: accumulator A, index or second register B, program counter (10 bits), instruction register (16 bits), flags Z and C.
 * Instruction word: 4-bit opcode, 1-bit mode (immediate or memory), 8-bit operand, spare bits. About 16 instructions: LDI, LD, ST, ADD, SUB, AND, OR, XOR, SHL, SHR, JMP, JZ, JC, IN, OUT, RETI (plus CALL/RET if the games need them).
-* Hardwired control, one instruction per two clock phases (fetch, execute), so slow mode shows exactly two visible steps per instruction.
+* Hardwired control, single-cycle: one clock per instruction.
 * Interrupts: one vector. A button press sets its request latch; if interrupts are enabled, the next fetch saves PC and flags into shadow registers (with LEDs) and jumps to the vector; RETI restores them. The handler reads the button port to see which button fired.
 * Chip estimate: 25–35 74HC chips plus two SRAMs and LED drivers. LEDs: about 256 for the display plus about 120 for registers, buses and control.
 
@@ -29,3 +36,18 @@ Separate from the minimal-computer research. Goal: an educational and art piece.
 4. Gate-level design in 74HC parts, simulated against the emulator instruction by instruction.
 5. Board plan: block placement on A4, LED count, power budget, silkscreen diagram.
 6. The web loader page: edit, assemble, upload, and a live mirror of the board's LEDs.
+
+## Visible parts estimate (front, through-hole)
+
+| Block | Parts | LEDs |
+|---|---|---|
+| Program counter (10 bit) | 3 × 74HC161 | 10 |
+| Instruction word | (from program SRAM on the back) | 16 |
+| Control decode | diode matrix (about 60–100 diodes) + 1–2 × 74HC138 | about 16 |
+| Registers A, B | 2 × 74HC574 | 16 |
+| ALU (add, subtract, AND, OR, XOR, shift) | 2 × 74HC283, 74HC86, 74HC08, 74HC32, 2–4 × 74HC157 | 8 result |
+| Flags Z, C | 74HC74, zero detect (74HC4078 or diodes) | 2 |
+| Interrupts (4 buttons) | 74HC74 × 2 request latches, 2 × 74HC574 shadow PC and flags | 4 + 16 |
+| Input and output ports | 74HC244, 74HC574 | 8 + 8 |
+
+About 20–25 through-hole chips plus the diode matrix. Back side: program SRAM, data SRAM, bus buffers for loading (74HC245), display memory and 16 × 16 matrix driving, ESP32, power.

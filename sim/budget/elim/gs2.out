@@ -1,0 +1,5 @@
+A,B,MK  (T1,F,..) (x,xbar) 1 FOUND 18 002121202120120212
+A,B,MK  (T1,F,..) {'CAP': 21, 'FOUND': 1}
+A,B,MK  mixed (F,T0,P),(T1,F,M) (x,xbar) 1 FOUND 18 002121202120120212
+A,B,MK  mixed (F,T0,P),(T1,F,M) {'CAP': 21, 'FOUND': 1}
+A,B+K   (F,T0,P),(F,T0,M+K) {'DEPTH': 2, 'CAP': 20}
