@@ -12,6 +12,14 @@ Separate from the minimal-computer research. Goal: an educational and art piece.
 * Loader: ESP32 in a marked corner, web page upload of assembled programs, not part of the computer (bus-isolated while running).
 * Every register, both buses, flags, program counter, instruction register, ALU inputs and outputs, and each control line has an LED. Silkscreen labels each block like a textbook diagram.
 
+## User decisions so far
+
+* Classic accumulator architecture (the user designs the instruction set on paper; the agent's set is in board/spoilers/).
+* Wide instruction words are fine; memory is cheap. Control-word style encoding with bus-safety fields decoded on board is under consideration.
+* Brainfuck runs by compiling to the native instructions in the assembler, not as the instruction set.
+* Main screen: a 320×240 RGB LCD with its own screen memory (ILI9341-class, 8-bit 8080 parallel bus), driven through an output port: set a window, then stream pixels; the LCD auto-increments. The 16×16 LED matrix stays as the "see the memory" display.
+* Stretch goal: a Doom-like raycaster demake (160×100 3D view, static status bar). This implies requirements for the design: data memory beyond 256 bytes (a page register for 64 KB), fast table lookup (multiply by square tables, trig and reciprocal tables), call and return, a longer program counter (4–8K words). Estimated 7 frames/s at 1 MHz, about 25 at 4 MHz (unverified).
+
 ## Build rules (decided)
 
 * Front side: through-hole parts that make up the visible CPU (kit-friendly), each with its LEDs. Back side: SMD support parts (memory chips, buffers, display driving, ESP32).
