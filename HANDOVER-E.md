@@ -20,13 +20,13 @@ Separate from the minimal-computer research. Goal: an educational and art piece.
 * Main screen: a 320×240 RGB LCD with its own screen memory (ILI9341-class, 8-bit 8080 parallel bus), driven through an output port: set a window, then stream pixels; the LCD auto-increments. The 16×16 LED matrix stays as the "see the memory" display.
 * Stretch goal: a Doom-like raycaster demake (160×100 3D view, static status bar). This implies requirements for the design: data memory beyond 256 bytes (a page register for 64 KB), fast table lookup (multiply by square tables, trig and reciprocal tables), call and return, a longer program counter (4–8K words). Estimated 7 frames/s at 1 MHz, about 25 at 4 MHz (unverified).
 
-## Instruction set budget (decided: 18)
+## Instruction set budget (decided: 16 opcodes, 4-bit)
 
 The user designs the details and encodings on paper; this fixes the scope.
 
 | # | Instruction | Notes |
 |---|---|---|
-| 1–2 | LOAD, STORE | addressing modes: constant, memory, indexed [B+offset], post-increment [B+] |
+| 1–2 | LOAD, STORE | addressing modes: constant, memory, indexed [B+offset], post-increment [B+], stack [SP] (STORE A,[--SP] is push, LOAD A,[SP++] is pop) |
 | 3 | MOVE | between A and B |
 | 4–5 | ADD, SUB | optional "use carry" bit for multi-byte arithmetic |
 | 6–8 | AND, OR, XOR | |
@@ -36,7 +36,8 @@ The user designs the details and encodings on paper; this fixes the scope.
 | 13–14 | CALL, RET | RET has a bit that also restores flags (return from interrupt) |
 | 15 | MUL | 8×8→16 by a 64K×16 table memory the CPU fills itself at start-up; product low byte to A, high byte to B |
 | 16 | DJNZ | decrement B, jump if not zero |
-| 17–18 | PUSH, POP | share the stack pointer with CALL and RET |
+
+Push and pop are the stack addressing mode of STORE and LOAD, not separate opcodes, so the set is 16 opcodes and fits a 4-bit field. Return-from-interrupt is a bit on RET.
 
 Orthogonality: every arithmetic and logic instruction takes every addressing mode; every jump takes the same condition list.
 
