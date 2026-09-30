@@ -20,33 +20,46 @@ Separate from the minimal-computer research. Goal: an educational and art piece.
 * Main screen: a 320×240 RGB LCD with its own screen memory (ILI9341-class, 8-bit 8080 parallel bus), driven through an output port: set a window, then stream pixels; the LCD auto-increments. The 16×16 LED matrix stays as the "see the memory" display.
 * Stretch goal: a Doom-like raycaster demake (160×100 3D view, static status bar). This implies requirements for the design: data memory beyond 256 bytes (a page register for 64 KB), fast table lookup (multiply by square tables, trig and reciprocal tables), call and return, a longer program counter (4–8K words). Estimated 7 frames/s at 1 MHz, about 25 at 4 MHz (unverified).
 
-## Instruction set budget (decided: 15 opcodes plus one spare, 4-bit)
+## Instruction set (decided: 14 opcodes plus 2 spare, 4-bit field)
 
 The user designs the details and encodings on paper; this fixes the scope.
 
-| # | Instruction | Notes |
-|---|---|---|
-| 1–2 | LOAD, STORE | addressing modes: constant, memory, indexed [B+offset], post-increment [B+], stack [SP] (STORE A,[--SP] is push, LOAD A,[SP++] is pop) |
-| 4–5 | ADD, SUB | optional "use carry" bit for multi-byte arithmetic |
-| 6–8 | AND, OR, XOR | |
-| 9–10 | SHL, SHR | through carry |
-| 11 | CMP | subtract that only sets flags |
-| 12 | JUMP if condition | always, zero, not zero, carry, no carry |
-| 13–14 | CALL, RET | RET has a bit that also restores flags (return from interrupt) |
-| 15 | MUL | 8×8→16 by a 64K×16 table memory the CPU fills itself at start-up; product low byte to A, high byte to B |
-| 16 | DJNZ | decrement B, jump if not zero |
+| Group | Opcodes |
+|---|---|
+| Data | LOAD, STORE |
+| Arithmetic | ADD, SUB, LOOKUP |
+| Logic and shifts | AND, OR, XOR, SHL, SHR |
+| Control | JUMP (condition: always, zero, not zero, carry, no carry), CALL, RET, DJNZ |
 
-MOVE is not an opcode: LOAD and the arithmetic and logic instructions have a destination bit (A or B) and a register operand mode, so a copy is LOAD B,A or LOAD A,B, and pointer arithmetic like ADD B,4 comes free. Opcode 16 is kept spare.
+Fields shared by the data, arithmetic and logic instructions:
+* Operand mode: constant, memory, indexed [B+offset], post-increment [B+], stack ([--SP] for store, [SP++] for load), register (the other register).
+* Destination (2 bits): A, B, none (flags only), spare.
+* Use-carry bit on ADD, SUB, SHL, SHR for multi-byte arithmetic.
 
-Push and pop are the stack addressing mode of STORE and LOAD, not separate opcodes, so the set is 16 opcodes and fits a 4-bit field. Return-from-interrupt is a bit on RET.
+LOOKUP: a function-table unit. A table memory addressed by A, B and a table-select field in the instruction; results go to A (and B for two-byte results). Table 0: 8×8 multiply (16-bit product). Table 1: 8÷8 divide (quotient and remainder). Further tables (sine, reciprocal, squares) as needed. The CPU fills the tables itself at start-up (incremental addition and subtraction, about a second in total at 1 MHz), so the ESP32 never computes. Silkscreen block: "FUNCTION TABLE".
 
-Orthogonality: every arithmetic and logic instruction takes every addressing mode; every jump takes the same condition list.
+RET has a bit that also restores the flags (return from interrupt).
+
+### Aliases (assembler nicknames, one word each)
+
+Every alias is exactly one machine instruction with some fields fixed. The card prints the 14 opcodes first and the aliases underneath with their expansions; the assembler listing and the phone view always show the real instruction next to the alias.
+
+| Alias | Machine instruction |
+|---|---|
+| MOVE B,A / MOVE A,B | LOAD with destination B/A, register operand |
+| CMP x | SUB x, destination none |
+| TEST x | AND x, destination none |
+| MUL / DIV | LOOKUP table 0 / table 1 |
+| PUSH A / POP A | STORE A,[--SP] / LOAD A,[SP++] |
+| NOT A | XOR A,0xFF |
+| RETI | RET with restore-flags bit |
+| NOP | JUMP to the next line |
 
 Memory-mapped devices (no instructions): buttons and interrupt enable, 60 Hz frame tick, hardware random-number generator, LCD data and command port, LED output port.
 
-Hardware implied: stack pointer (up/down counter), B built from up/down counters (gives DJNZ and post-increment), multiply table memory and a visible MULTIPLIER block with LEDs on inputs and product.
+Hardware implied: stack pointer (up/down counter), B built from up/down counters (DJNZ, post-increment), function-table memory with a visible block showing inputs and outputs, destination decode with a "none" option, register operand path.
 
-Stopping rule for any further instruction (all three must hold): it cuts cycles or code by at least about 5% in one benchmark program (Snake, Pong, Life, raycaster, compiled Brainfuck), measured in the emulator; it is not a variant of an existing instruction with a fixed operand; and the whole set still fits one labelled box on the silkscreen.
+Stopping rule for any further opcode (all three must hold): it cuts cycles or code by at least about 5% in one benchmark program (Snake, Pong, Life, raycaster, compiled Brainfuck), measured in the emulator; it is not expressible as an alias of an existing opcode; and the whole set still fits one labelled box on the silkscreen.
 
 ## Build rules (decided)
 
