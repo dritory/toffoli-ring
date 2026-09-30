@@ -25,7 +25,7 @@ Separate from the minimal-computer research. Goal: an educational and art piece.
 * Only the visible logic chips are through-hole: about 20–25 DIP 74HC chips in sockets, hand-soldered (or JLC through-hole assembly). About 400–500 joints including sockets.
 * The diode-matrix decoder: through-hole diodes if the look is worth about 200 joints, otherwise SMD diodes in a labelled grid.
 
-## Proposed architecture (to be confirmed by the emulator work below)
+## Proposed architecture (SPOILER: an agent's proposal, see board/spoilers/)
 
 * Harvard: program memory 1K × 16-bit words (SRAM loaded by the ESP32), data memory 256 bytes (SRAM), display 32 bytes as latches with LEDs on their outputs.
 * Registers: accumulator A, index or second register B, program counter (10 bits), instruction register (16 bits), flags Z and C.
