@@ -65,7 +65,11 @@ Stopping rule for any further opcode (all three must hold): it cuts cycles or co
 
 * 8-bit data, 16-bit addresses.
 * Program memory: 64K words, 16-bit program counter. Separate from data memory (Harvard). The CPU cannot write program memory; only the loader writes it while the CPU is stopped.
-* Data memory: 64 KB. How a 16-bit data address is formed (address in the instruction, page register, or B as a 16-bit pointer pair) is the user's open design choice.
+* Data memory: 64 KB. Direct addressing: the full 16-bit data address is carried in the instruction word.
+* Instruction word: 32 bits (four 8-bit program memory chips, SMD). Worst case is about 26 bits (opcode 4, operand mode 3, destination 2, carry 1, address 16), jumps about 23 (opcode 4, condition 3, target 16); no instruction carries two addresses. Spare bits available.
+* Open: how indexed addressing forms its address (16-bit base in the instruction plus 8-bit B needs a 16-bit adder in the visible CPU; B as a 16-bit pointer needs a wider B instead).
+
+Design principle: the visible CPU spends chips where the computing happens (ALU, registers, flags, decode, program counter, address forming). Width and storage go to cheap SMD memory; loading, clocking and observation go to the ESP32, which never computes.
 
 ## Build rules (decided)
 
