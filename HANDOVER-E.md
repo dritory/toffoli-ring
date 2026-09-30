@@ -19,6 +19,14 @@ Separate from the minimal-computer research. Goal: an educational and art piece.
 * Single-cycle Harvard RISC: each clock fetches one instruction from program memory and executes it; the instruction word drives control directly, so single-step shows one whole instruction per press.
 * Control decode as a through-hole diode matrix with an LED per control line, so the decoding is visible and hand-traceable.
 
+## Honesty rules
+
+* The native instruction format (the bit layout the hardware executes) is the instruction set. It is published in full and printed on the silkscreen next to the instruction LEDs, so the machine can be hand-programmed from the board alone.
+* The assembler only translates: one assembly line becomes one instruction word. Anything that expands to several words is marked as a macro.
+* Bits that could cause bus fights are encoded as small fields and decoded on the board, so no instruction word can damage the hardware.
+* The ESP32 loads, clocks and observes; it never takes part in execution.
+* Part and chip counts include every chip on the board, including decoding and support.
+
 ## Assembly (decided, pending user confirmation)
 
 * JLCPCB assembles all SMD parts: every LED (0805 or 1206, a few hundred), resistors, memory chips, buffers, display driving, ESP32 module, power.
