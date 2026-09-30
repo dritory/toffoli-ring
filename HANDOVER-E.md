@@ -61,6 +61,12 @@ Hardware implied: stack pointer (up/down counter), B built from up/down counters
 
 Stopping rule for any further opcode (all three must hold): it cuts cycles or code by at least about 5% in one benchmark program (Snake, Pong, Life, raycaster, compiled Brainfuck), measured in the emulator; it is not expressible as an alias of an existing opcode; and the whole set still fits one labelled box on the silkscreen.
 
+## Memory (decided)
+
+* 8-bit data, 16-bit addresses.
+* Program memory: 64K words, 16-bit program counter. Separate from data memory (Harvard). The CPU cannot write program memory; only the loader writes it while the CPU is stopped.
+* Data memory: 64 KB. How a 16-bit data address is formed (address in the instruction, page register, or B as a 16-bit pointer pair) is the user's open design choice.
+
 ## Build rules (decided)
 
 * Front side: through-hole parts that make up the visible CPU (kit-friendly), each with its LEDs. Back side: SMD support parts (memory chips, buffers, display driving, ESP32).
@@ -84,7 +90,7 @@ Stopping rule for any further opcode (all three must hold): it cuts cycles or co
 
 ## Proposed architecture (SPOILER: an agent's proposal, see board/spoilers/)
 
-* Harvard: program memory 1K × 16-bit words (SRAM loaded by the ESP32), data memory 256 bytes (SRAM), display 32 bytes as latches with LEDs on their outputs.
+* (Superseded by the Memory section above.) Harvard: program memory 1K × 16-bit words, data memory 256 bytes, display 32 bytes as latches with LEDs on their outputs.
 * Registers: accumulator A, index or second register B, program counter (10 bits), instruction register (16 bits), flags Z and C.
 * Instruction word: 4-bit opcode, 1-bit mode (immediate or memory), 8-bit operand, spare bits. About 16 instructions: LDI, LD, ST, ADD, SUB, AND, OR, XOR, SHL, SHR, JMP, JZ, JC, IN, OUT, RETI (plus CALL/RET if the games need them).
 * Hardwired control, single-cycle: one clock per instruction.
