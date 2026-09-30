@@ -20,6 +20,32 @@ Separate from the minimal-computer research. Goal: an educational and art piece.
 * Main screen: a 320×240 RGB LCD with its own screen memory (ILI9341-class, 8-bit 8080 parallel bus), driven through an output port: set a window, then stream pixels; the LCD auto-increments. The 16×16 LED matrix stays as the "see the memory" display.
 * Stretch goal: a Doom-like raycaster demake (160×100 3D view, static status bar). This implies requirements for the design: data memory beyond 256 bytes (a page register for 64 KB), fast table lookup (multiply by square tables, trig and reciprocal tables), call and return, a longer program counter (4–8K words). Estimated 7 frames/s at 1 MHz, about 25 at 4 MHz (unverified).
 
+## Instruction set budget (decided: 18)
+
+The user designs the details and encodings on paper; this fixes the scope.
+
+| # | Instruction | Notes |
+|---|---|---|
+| 1–2 | LOAD, STORE | addressing modes: constant, memory, indexed [B+offset], post-increment [B+] |
+| 3 | MOVE | between A and B |
+| 4–5 | ADD, SUB | optional "use carry" bit for multi-byte arithmetic |
+| 6–8 | AND, OR, XOR | |
+| 9–10 | SHL, SHR | through carry |
+| 11 | CMP | subtract that only sets flags |
+| 12 | JUMP if condition | always, zero, not zero, carry, no carry |
+| 13–14 | CALL, RET | RET has a bit that also restores flags (return from interrupt) |
+| 15 | MUL | 8×8→16 by a 64K×16 table memory the CPU fills itself at start-up; product low byte to A, high byte to B |
+| 16 | DJNZ | decrement B, jump if not zero |
+| 17–18 | PUSH, POP | share the stack pointer with CALL and RET |
+
+Orthogonality: every arithmetic and logic instruction takes every addressing mode; every jump takes the same condition list.
+
+Memory-mapped devices (no instructions): buttons and interrupt enable, 60 Hz frame tick, hardware random-number generator, LCD data and command port, LED output port.
+
+Hardware implied: stack pointer (up/down counter), B built from up/down counters (gives DJNZ and post-increment), multiply table memory and a visible MULTIPLIER block with LEDs on inputs and product.
+
+Stopping rule for any further instruction (all three must hold): it cuts cycles or code by at least about 5% in one benchmark program (Snake, Pong, Life, raycaster, compiled Brainfuck), measured in the emulator; it is not a variant of an existing instruction with a fixed operand; and the whole set still fits one labelled box on the silkscreen.
+
 ## Build rules (decided)
 
 * Front side: through-hole parts that make up the visible CPU (kit-friendly), each with its LEDs. Back side: SMD support parts (memory chips, buffers, display driving, ESP32).
