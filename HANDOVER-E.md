@@ -71,6 +71,21 @@ Stopping rule for any further opcode (all three must hold): it cuts cycles or co
 
 Design principle: the visible CPU spends chips where the computing happens (ALU, registers, flags, decode, program counter, address forming). Width and storage go to cheap SMD memory; loading, clocking and observation go to the ESP32, which never computes.
 
+## Paging safety (proposed)
+
+Hazards: wrong page selected (forgotten, or changed by an interrupt handler), B wrapping from 0xFF to 0x00 inside the same page during post-increment, stack running into data, stray writes to devices or tables.
+
+Hardware (cheap):
+* Interrupt entry saves P with the flags in the shadow registers and RET-with-restore puts it back, so handlers cannot leave the wrong page.
+* P built from up/down counters chained to B: post-increment carries from B into P, so P:B behaves as a 16-bit pointer and long walks cross pages correctly. Wrap-around then only happens at 0xFFFF.
+* Fixed memory map: devices and the stack live at fixed addresses reached by direct 16-bit addressing, never through P.
+
+Tools (most of the safety, free):
+* Assembler: named pages and arrays, error if an array overflows its page or regions overlap.
+* Emulator debug mode: stops on stack overflow, writes outside declared regions, and index wrap-around.
+* On the board: the ESP32 observes the address bus and can flag writes to forbidden regions on the phone (observation only, so the honesty rule holds).
+* Convention: every routine sets P before its first indexed access.
+
 ## Build rules (decided)
 
 * Front side: through-hole parts that make up the visible CPU (kit-friendly), each with its LEDs. Back side: SMD support parts (memory chips, buffers, display driving, ESP32).
