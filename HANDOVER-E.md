@@ -14,77 +14,78 @@ Separate from the minimal-computer research. Goal: an educational and art piece.
 
 ## User decisions so far
 
-* Classic accumulator architecture (the user designs the instruction set on paper; the agent's set is in board/spoilers/).
+* Classic accumulator architecture with a 16-bit pointer, in the style of the Motorola 6800 (registers A, X, C, SP). The user designs the details on paper; the agent's earlier set is in board/spoilers/.
 * Wide instruction words are fine; memory is cheap. Control-word style encoding with bus-safety fields decoded on board is under consideration.
 * Brainfuck runs by compiling to the native instructions in the assembler, not as the instruction set.
 * Main screen: a 320×240 RGB LCD with its own screen memory (ILI9341-class, 8-bit 8080 parallel bus), driven through an output port: set a window, then stream pixels; the LCD auto-increments. The 16×16 LED matrix stays as the "see the memory" display.
 * Stretch goal: a Doom-like raycaster demake (160×100 3D view, static status bar). This implies requirements for the design: data memory beyond 256 bytes (a page register for 64 KB), fast table lookup (multiply by square tables, trig and reciprocal tables), call and return, a longer program counter (4–8K words). Estimated 7 frames/s at 1 MHz, about 25 at 4 MHz (unverified).
 
-## Instruction set (decided: 14 opcodes plus 2 spare, 4-bit field)
+## Design principle: simple over fast
 
-The user designs the details and encodings on paper; this fixes the scope.
+The machine does not need to be fast. Every feature must make it simpler to learn, reason about, or build. Prefer one clear mechanism over flags, mode bits and special cases. Speed only matters where a benchmark program would otherwise be unusable.
+
+## Registers (decided)
+
+| Register | Width | Job |
+|---|---|---|
+| A | 8 | accumulator: all arithmetic and logic |
+| X | 16 | pointer into data memory |
+| C | 8 | loop counter (DJNZ) |
+| SP | 16 | stack pointer |
+| PC | 16 | program counter |
+| Flags | Z, C | zero and carry, nothing else |
+
+Each register has its own row of LEDs. X and C are built from up/down counters (post-increment and DJNZ).
+
+## Instruction set (decided: 16 opcodes, 4-bit field)
+
+The user designs the encodings on paper; this fixes the scope.
 
 | Group | Opcodes |
 |---|---|
-| Data | LOAD, STORE |
+| Data | LOAD, STORE, PUSH, POP |
 | Arithmetic | ADD, SUB, LOOKUP |
 | Logic and shifts | AND, OR, XOR, SHL, SHR |
 | Control | JUMP (condition: always, zero, not zero, carry, no carry), CALL, RET, DJNZ |
 
-Fields shared by the data, arithmetic and logic instructions:
-* Operand mode: constant, memory, indexed [B+offset], post-increment [B+], stack ([--SP] for store, [SP++] for load), register (the other register).
-* Destination (2 bits): A, B, none (flags only), P (page register).
-* Use-carry bit on ADD, SUB, SHL, SHR for multi-byte arithmetic.
+Operand modes (the same for every data, arithmetic and logic instruction): constant `#n`, direct `[addr]` (16-bit address in the instruction), pointer `[X]`, pointer with post-increment `[X+]`.
 
-LOOKUP: a function-table unit. A table memory addressed by A, B and a table-select field in the instruction; results go to A (and B for two-byte results). Table 0: 8×8 multiply (16-bit product). Table 1: 8÷8 divide (quotient and remainder). Further tables (sine, reciprocal, squares) as needed. The CPU fills the tables itself at start-up (incremental addition and subtraction, about a second in total at 1 MHz), so the ESP32 never computes. Silkscreen block: "FUNCTION TABLE".
+Destinations: A, C, X-low, X-high, none (flags only). `LOAD X, #addr` loads the whole 16-bit pointer in one instruction.
 
-RET has a bit that also restores the flags (return from interrupt).
+Use-carry bit on ADD, SUB, SHL, SHR for multi-byte arithmetic (aliases ADC, SBC).
+
+LOOKUP: a function-table unit. A table memory addressed by A, the operand and a table-select field; results to A (and C for two-byte results). Table 0: 8×8 multiply. Table 1: 8÷8 divide (quotient and remainder). Further tables (sine, reciprocal) as needed. The CPU fills the tables itself at start-up, so the ESP32 never computes. Silkscreen block: "FUNCTION TABLE".
+
+Interrupts: entry saves PC and flags; the handler saves anything else it uses with PUSH and POP. RET has a bit that restores the flags (alias RETI).
 
 ### Aliases (assembler nicknames, one word each)
 
-Every alias is exactly one machine instruction with some fields fixed. The card prints the 14 opcodes first and the aliases underneath with their expansions; the assembler listing and the phone view always show the real instruction next to the alias.
+Every alias is exactly one machine instruction with some fields fixed. The card prints the 16 opcodes first and the aliases underneath with their expansions; the assembler listing and the phone view always show the real instruction.
 
 | Alias | Machine instruction |
 |---|---|
-| MOVE B,A / MOVE A,B | LOAD with destination B/A, register operand |
+| MOVE C,A (and similar) | LOAD with that destination, operand from the source register |
 | CMP x | SUB x, destination none |
 | TEST x | AND x, destination none |
 | MUL / DIV | LOOKUP table 0 / table 1 |
-| PUSH A / POP A | STORE A,[--SP] / LOAD A,[SP++] |
-| NOT A | XOR A,0xFF |
-| RETI | RET with restore-flags bit |
+| ADC / SBC | ADD / SUB with use-carry |
+| NOT A | XOR A,#0xFF |
+| RETI | RET with restore-flags |
 | NOP | JUMP to the next line |
 
-Memory-mapped devices (no instructions): buttons and interrupt enable, 60 Hz frame tick, hardware random-number generator, LCD data and command port, LED output port.
+Memory-mapped devices (no instructions, fixed addresses reached by direct addressing): buttons and interrupt enable, 60 Hz frame tick, hardware random-number generator, LCD data and command port, LED output port.
 
-Hardware implied: stack pointer (up/down counter), B built from up/down counters (DJNZ, post-increment), function-table memory with a visible block showing inputs and outputs, destination decode with a "none" option, register operand path.
-
-Stopping rule for any further opcode (all three must hold): it cuts cycles or code by at least about 5% in one benchmark program (Snake, Pong, Life, raycaster, compiled Brainfuck), measured in the emulator; it is not expressible as an alias of an existing opcode; and the whole set still fits one labelled box on the silkscreen.
+Stopping rule for any change to the opcode list (all three must hold): it cuts cycles or code by at least about 5% in one benchmark program (Snake, Pong, Life, raycaster, compiled Brainfuck), measured in the emulator; it cannot be an alias; and the whole set still fits one labelled box on the silkscreen.
 
 ## Memory (decided)
 
-* 8-bit data, 16-bit addresses.
-* Program memory: 64K words, 16-bit program counter. Separate from data memory (Harvard). The CPU cannot write program memory; only the loader writes it while the CPU is stopped.
-* Data memory: 64 KB. Direct addressing: the full 16-bit data address is carried in the instruction word.
-* Instruction word: 32 bits (four 8-bit program memory chips, SMD). Worst case is about 26 bits (opcode 4, operand mode 3, destination 2, carry 1, address 16), jumps about 23 (opcode 4, condition 3, target 16); no instruction carries two addresses. Spare bits available.
-* Indexed addressing by concatenation, no adder: address = P:B, where P is an 8-bit page register (with LEDs) and B the index. The program sets P at run time; P is the fourth value of the 2-bit destination field (A, B, none, P), so `LOAD P,3` selects page 3. Estimated cost about 4–5 chips (P register plus address multiplexers).
+* 8-bit data, 16-bit addresses. Program memory 64K words, 16-bit program counter; data memory 64 KB.
+* Program and data memories are separate (Harvard). The CPU cannot write program memory; only the loader writes it while the CPU is stopped.
+* Instruction word: 32 bits (four 8-bit program memory chips, SMD). The largest instruction shape needs about 27 bits.
+* No paging: X is a full 16-bit pointer, so arrays may be any size and lie anywhere. The stack and devices have fixed addresses.
+* Safety in the tools: the assembler names arrays and refuses overlapping regions; the emulator debug mode stops on stack overflow or writes outside declared regions; on the board the ESP32 can flag forbidden writes on the phone by watching the address bus (observation only).
 
-Design principle: the visible CPU spends chips where the computing happens (ALU, registers, flags, decode, program counter, address forming). Width and storage go to cheap SMD memory; loading, clocking and observation go to the ESP32, which never computes.
-
-## Paging safety (proposed)
-
-Hazards: wrong page selected (forgotten, or changed by an interrupt handler), B wrapping from 0xFF to 0x00 inside the same page during post-increment, stack running into data, stray writes to devices or tables.
-
-Hardware (cheap):
-* Interrupt entry saves P with the flags in the shadow registers and RET-with-restore puts it back, so handlers cannot leave the wrong page.
-* P built from up/down counters chained to B: post-increment carries from B into P, so P:B behaves as a 16-bit pointer and long walks cross pages correctly. Wrap-around then only happens at 0xFFFF.
-* Fixed memory map: devices and the stack live at fixed addresses reached by direct 16-bit addressing, never through P.
-
-Tools (most of the safety, free):
-* Assembler: named pages and arrays, error if an array overflows its page or regions overlap.
-* Emulator debug mode: stops on stack overflow, writes outside declared regions, and index wrap-around.
-* On the board: the ESP32 observes the address bus and can flag writes to forbidden regions on the phone (observation only, so the honesty rule holds).
-* Convention: every routine sets P before its first indexed access.
+Design principle for chips: the visible CPU spends chips where the computing happens (ALU, registers, flags, decode, program counter, address forming). Width and storage go to cheap SMD memory; loading, clocking and observation go to the ESP32, which never computes.
 
 ## Build rules (decided)
 
