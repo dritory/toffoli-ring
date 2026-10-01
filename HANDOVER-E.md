@@ -28,14 +28,15 @@ The machine does not need to be fast. Every feature must make it simpler to lear
 
 | Register | Width | Job |
 |---|---|---|
-| A | 8 | accumulator: all arithmetic and logic |
+| A | 8 | accumulator: every calculation happens here |
 | X | 16 | pointer into data memory |
 | C | 8 | loop counter (DJNZ) |
-| SP | 16 | stack pointer |
+| SP | 8 | data stack pointer; the stack is the fixed page 0x0100–0x01FF |
+| RSP | 8 | return stack pointer for CALL, RET and interrupts |
 | PC | 16 | program counter |
 | Flags | Z, C | zero and carry, nothing else |
 
-Each register has its own row of LEDs. X and C are built from up/down counters (post-increment and DJNZ).
+Each register has its own row of LEDs. X, C, SP and RSP are up/down counters.
 
 ## Instruction set (decided: 16 opcodes, 4-bit field)
 
@@ -48,15 +49,15 @@ The user designs the encodings on paper; this fixes the scope.
 | Logic and shifts | AND, OR, XOR, SHL, SHR |
 | Control | JUMP (condition: always, zero, not zero, carry, no carry), CALL, RET, DJNZ |
 
-Operand modes (the same for every data, arithmetic and logic instruction): constant `#n`, direct `[addr]` (16-bit address in the instruction), pointer `[X]`, pointer with post-increment `[X+]`.
-
-Destinations: A, C, X-low, X-high, none (flags only). `LOAD X, #addr` loads the whole 16-bit pointer in one instruction.
-
-Use-carry bit on ADD, SUB, SHL, SHR for multi-byte arithmetic (aliases ADC, SBC).
-
-LOOKUP: a function-table unit. A table memory addressed by A, the operand and a table-select field; results to A (and C for two-byte results). Table 0: 8×8 multiply. Table 1: 8÷8 divide (quotient and remainder). Further tables (sine, reciprocal) as needed. The CPU fills the tables itself at start-up, so the ESP32 never computes. Silkscreen block: "FUNCTION TABLE".
-
-Interrupts: entry saves PC and flags; the handler saves anything else it uses with PUSH and POP. RET has a bit that restores the flags (alias RETI).
+Rules, one each:
+* **Calculation always lands in A.** ADD, SUB, LOOKUP, AND, OR, XOR, SHL, SHR compute A op operand and write A, or write nothing when the keep bit is off (only the flags change).
+* **LOAD and POP fill any register** (A, C, X-low, X-high); **STORE and PUSH save any register.** `LOAD X, #addr` fills the whole pointer in one instruction.
+* **Operands** are the same for every instruction that takes one: constant `#n`, direct `[addr]`, pointer `[X]`, pointer then step `[X+]`.
+* **Carry:** the use-carry bit means "bring in the old carry" for ADD, SUB, SHL and SHR (aliases ADC, SBC, ROL, ROR). Without it ADD and SUB start fresh and shifts bring in 0. The outgoing carry always goes to C.
+* **Flags:** Z after every calculation; C after ADD, SUB, SHL, SHR. LOAD, STORE, PUSH, POP and jumps never change flags.
+* **LOOKUP** returns one byte into A from a two-input function table selected by a field: MUL-low, MUL-high, DIV (quotient), MOD (remainder). Inputs are A and the operand. Single-input tables (sine, reciprocal) are ordinary data in memory, read with `[X]`. The CPU fills the function tables itself at start-up.
+* **Two stacks:** PUSH and POP use the data stack in data memory (one byte each). CALL, RET and interrupts use a separate 16-bit-wide return stack, so a call still finishes in one clock. Neither stack can overwrite the other.
+* **Interrupts:** entry pushes PC and the flags on the return stack and jumps to the vector; RET with its restore bit (alias RETI) pops both. The handler saves registers it uses with PUSH and POP. Interrupt enable is a device register.
 
 ### Aliases (assembler nicknames, one word each)
 
@@ -64,25 +65,32 @@ Every alias is exactly one machine instruction with some fields fixed. The card 
 
 | Alias | Machine instruction |
 |---|---|
-| MOVE C,A (and similar) | LOAD with that destination, operand from the source register |
-| CMP x | SUB x, destination none |
-| TEST x | AND x, destination none |
-| MUL / DIV | LOOKUP table 0 / table 1 |
-| ADC / SBC | ADD / SUB with use-carry |
-| NOT A | XOR A,#0xFF |
+| MOVE C,A (and similar) | LOAD into C, operand register A |
+| CMP x / TEST x | SUB x / AND x with keep off |
+| MUL, MULH, DIV, MOD | LOOKUP with that table |
+| ADC, SBC, ROL, ROR | ADD, SUB, SHL, SHR with use-carry |
+| NOT | XOR #0xFF |
 | RETI | RET with restore-flags |
 | NOP | JUMP to the next line |
 
-Memory-mapped devices (no instructions, fixed addresses reached by direct addressing): buttons and interrupt enable, 60 Hz frame tick, hardware random-number generator, LCD data and command port, LED output port.
+Memory-mapped devices (fixed addresses, reached by direct addressing): buttons and interrupt enable, 60 Hz frame tick, random-number generator, LCD data and command port, LED output port.
 
 Stopping rule for any change to the opcode list (all three must hold): it cuts cycles or code by at least about 5% in one benchmark program (Snake, Pong, Life, raycaster, compiled Brainfuck), measured in the emulator; it cannot be an alias; and the whole set still fits one labelled box on the silkscreen.
+
+### Simplification pass 2 (what changed and why)
+
+* Calculation writes only A (or nothing); other registers are filled by LOAD and POP. One rule instead of a destination field on every instruction, and the ALU output goes to one place.
+* LOOKUP returns one byte into A. The earlier plan put the high byte of a product into C, which would have clobbered the loop counter.
+* Return addresses moved to their own stack. A 16-bit return address cannot be written to 8-bit data memory in one clock, and separating the stacks removes stack-collision bugs.
+* SP became 8 bits with the stack in a fixed page: 256 bytes is plenty, and it saves two counter chips.
+* One carry rule for adds and shifts, and a fixed list of which instructions set which flags.
 
 ## Memory (decided)
 
 * 8-bit data, 16-bit addresses. Program memory 64K words, 16-bit program counter; data memory 64 KB.
 * Program and data memories are separate (Harvard). The CPU cannot write program memory; only the loader writes it while the CPU is stopped.
-* Instruction word: 32 bits (four 8-bit program memory chips, SMD). The largest instruction shape needs about 27 bits.
-* No paging: X is a full 16-bit pointer, so arrays may be any size and lie anywhere. The stack and devices have fixed addresses.
+* Instruction word: 32 bits (four 8-bit program memory chips, SMD); the largest shape needs well under 32.
+* No paging: X is a full 16-bit pointer, so arrays may be any size and lie anywhere. The data stack (page 0x01) and devices have fixed addresses; the return stack is a separate small memory.
 * Safety in the tools: the assembler names arrays and refuses overlapping regions; the emulator debug mode stops on stack overflow or writes outside declared regions; on the board the ESP32 can flag forbidden writes on the phone by watching the address bus (observation only).
 
 Design principle for chips: the visible CPU spends chips where the computing happens (ALU, registers, flags, decode, program counter, address forming). Width and storage go to cheap SMD memory; loading, clocking and observation go to the ESP32, which never computes.
