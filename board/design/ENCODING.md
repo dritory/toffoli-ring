@@ -40,7 +40,8 @@ Patterns that fall out: in the arithmetic half, bit 2 splits the carry users (0�
 | 1 | counter |
 | 2 | X-low |
 | 3 | X-high |
-| 4–7 | the rest (proposed: 4 = whole 16-bit X for `LOAD X, #addr`; 5–7 spare) |
+| 4 | whole 16-bit X (for `LOAD X, #addr`) |
+| 5–7 | spare |
 
 ## Sources (source field)
 
@@ -72,4 +73,45 @@ Three bits: [not, carry, zero]. Rule: jump = not XOR ((zero AND Z) OR (carry AND
 | 110 | if not carry |
 | 111 | if neither zero nor carry |
 
-Still to decide: final register codes (see question in conversation), LOOKUP table codes, which fields each opcode uses.
+## LOOKUP tables (select field on LOOKUP)
+
+| Code | Table | Bit meaning |
+|---|---|---|
+| 0 | MUL (low byte of A × operand) | bit 1 = 0: multiply |
+| 1 | MULH (high byte) | bit 0 = 1: second result byte |
+| 2 | DIV (quotient of A ÷ operand) | bit 1 = 1: divide |
+| 3 | MOD (remainder) | |
+| 4–7 | free for later tables | |
+
+The select bits go straight to the top address lines of the table memory, so the table choice needs no decoding.
+
+## Usage table (DRAFT for review)
+
+Fields: R = restore, S = select, K = keep, G = reg, Y = carry, O = source, @ = address. "op" means the operand chosen by the source field (with the address field when the source is a constant or [addr]).
+
+| Code | Opcode | Fields used | Does | Flags |
+|---|---|---|---|---|
+| 0 | ADD | K Y O @ | A = A + op (+ C if Y) | Z, C |
+| 1 | SUB | K Y O @ | A = A − op (− borrow if Y) | Z, C (C = borrow, to confirm) |
+| 2 | SHL | K Y | A shifted left by one; bit 7 to C; bit 0 = C if Y else 0 | Z, C |
+| 3 | SHR | K Y | A shifted right by one; bit 0 to C; bit 7 = C if Y else 0 | Z, C |
+| 4 | AND | K O @ | A = A and op | Z |
+| 5 | OR | K O @ | A = A or op | Z |
+| 6 | XOR | K O @ | A = A xor op | Z |
+| 7 | LOOKUP | S K O @ | A = table[S](A, op) | Z |
+| 8 | LOAD | G O @ | register G = op; G = 4 loads all of X from the 16-bit constant | none |
+| 9 | STORE | G O @ | memory at [addr], [X] or [X+] = register G | none |
+| A | PUSH | G | data stack: SP − 1, then memory[SP] = G | none |
+| B | POP | G | G = memory[SP], then SP + 1 | none |
+| C | JUMP | S @ | if condition S: PC = address | none |
+| D | DJNZ | @ | counter − 1; if counter ≠ 0: PC = address | none |
+| E | CALL | S @ | if condition S: push PC + 1 on the return stack, PC = address | none |
+| F | RET | R S | if condition S: PC = pop return stack; if R, also restore flags | restored if R |
+
+Interrupt entry (hardware, no opcode): push PC and flags on the return stack, jump to the vector.
+
+Open questions in this draft:
+1. After SUB, is C "borrow" (1 when the result went below 0) or "no borrow"? Borrow reads more naturally.
+2. Shifts act on A only and ignore the operand. Fine, or should SHL and SHR shift the operand into A?
+3. CALL and RET use the same condition field as JUMP (100 = always). This costs no extra hardware and gives conditional calls and returns. Keep it?
+
