@@ -36,23 +36,26 @@ Patterns that fall out: in the arithmetic half, bit 2 splits the carry users (0�
 
 | Code | Register |
 |---|---|
-| 0 | X-high |
-| 1 | X-low |
-| 2 | counter |
-| 3 | A |
-| 4–7 | to decide (e.g. whole 16-bit X for `LOAD X, #addr`) |
+| 0 | A |
+| 1 | counter |
+| 2 | X-low |
+| 3 | X-high |
+| 4–7 | the rest (proposed: 4 = whole 16-bit X for `LOAD X, #addr`; 5–7 spare) |
 
 ## Sources (source field)
 
-High bit 1 selects a register, with the same low bits as the register codes, so the same wires serve both fields.
+The top bit (value 4) chooses memory or register; for registers the low two bits are the register code, so the same wires serve both fields.
 
 | Code | Source |
 |---|---|
-| 0–3 | constant #n, [addr], [X], [X+] (order to confirm) |
-| 4 | register X-high |
-| 5 | register X-low |
-| 6 | register counter |
-| 7 | register A |
+| 0 | constant #n |
+| 1 | [addr] |
+| 2 | [X] |
+| 3 | [X+] |
+| 4 | register A |
+| 5 | register counter |
+| 6 | register X-low |
+| 7 | register X-high |
 
 ## Jump conditions (select field on JUMP)
 
