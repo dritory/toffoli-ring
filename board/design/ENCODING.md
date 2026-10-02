@@ -54,4 +54,19 @@ High bit 1 selects a register, with the same low bits as the register codes, so 
 | 6 | register counter |
 | 7 | register A |
 
-Still to decide: jump condition codes, LOOKUP table codes, reg codes 4–7, which fields each opcode uses.
+## Jump conditions (select field on JUMP)
+
+Three bits: [not, carry, zero]. Rule: jump = not XOR ((zero AND Z) OR (carry AND C)).
+
+| Code | Meaning |
+|---|---|
+| 000 | never (no jump) |
+| 001 | if zero |
+| 010 | if carry |
+| 011 | if zero or carry |
+| 100 | always |
+| 101 | if not zero |
+| 110 | if not carry |
+| 111 | if neither zero nor carry |
+
+Still to decide: final register codes (see question in conversation), LOOKUP table codes, which fields each opcode uses.
