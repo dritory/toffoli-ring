@@ -41,7 +41,11 @@ Patterns that fall out: in the arithmetic half, bit 2 splits the carry users (0�
 | 2 | X-low |
 | 3 | X-high |
 | 4 | whole 16-bit X (for `LOAD X, #addr`) |
-| 5–7 | spare |
+| 5 | SP (data stack pointer) |
+| 6 | RSP (return stack pointer) |
+| 7 | spare (candidate: the flags) |
+
+Every register can be loaded and stored with LOAD and STORE. Only the four 8-bit working registers (A, counter, X-low, X-high) can also be the operand of a calculation.
 
 ## Sources (source field)
 
@@ -85,14 +89,14 @@ Three bits: [not, carry, zero]. Rule: jump = not XOR ((zero AND Z) OR (carry AND
 
 The select bits go straight to the top address lines of the table memory, so the table choice needs no decoding.
 
-## Usage table (DRAFT for review)
+## Usage table
 
 Fields: R = restore, S = select, K = keep, G = reg, Y = carry, O = source, @ = address. "op" means the operand chosen by the source field (with the address field when the source is a constant or [addr]).
 
 | Code | Opcode | Fields used | Does | Flags |
 |---|---|---|---|---|
 | 0 | ADD | K Y O @ | A = A + op (+ C if Y) | Z, C |
-| 1 | SUB | K Y O @ | A = A − op (− borrow if Y) | Z, C (C = borrow, to confirm) |
+| 1 | SUB | K Y O @ | A = A − op (− borrow if Y) | Z, C (C = borrow: 1 when the result went below 0) |
 | 2 | SHL | K Y | A shifted left by one; bit 7 to C; bit 0 = C if Y else 0 | Z, C |
 | 3 | SHR | K Y | A shifted right by one; bit 0 to C; bit 7 = C if Y else 0 | Z, C |
 | 4 | AND | K O @ | A = A and op | Z |
@@ -110,8 +114,5 @@ Fields: R = restore, S = select, K = keep, G = reg, Y = carry, O = source, @ = a
 
 Interrupt entry (hardware, no opcode): push PC and flags on the return stack, jump to the vector.
 
-Open questions in this draft:
-1. After SUB, is C "borrow" (1 when the result went below 0) or "no borrow"? Borrow reads more naturally.
-2. Shifts act on A only and ignore the operand. Fine, or should SHL and SHR shift the operand into A?
-3. CALL and RET use the same condition field as JUMP (100 = always). This costs no extra hardware and gives conditional calls and returns. Keep it?
+Decisions: C after SUB means borrow, so CMP then "jump if carry" means "less than". CALL and RET take the same condition field as JUMP (100 = always). Shifts act on A only (default, since the user had no preference: shifting a memory value is LOAD then SHL).
 
