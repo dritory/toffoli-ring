@@ -107,7 +107,7 @@ Design principle for chips: the visible CPU spends chips where the computing hap
 * The native instruction format (the bit layout the hardware executes) is the instruction set. It is published in full and printed on the silkscreen next to the instruction LEDs, so the machine can be hand-programmed from the board alone.
 * The assembler only translates: one assembly line becomes one instruction word. Anything that expands to several words is marked as a macro.
 * Bits that could cause bus fights are encoded as small fields and decoded on the board, so no instruction word can damage the hardware.
-* The ESP32 loads, clocks and observes; it never takes part in execution.
+* Only the core CPU is built from circuits. The ESP32 (or similar) may load, clock, observe, and act as a peripheral that stores or forwards data: it fills the LOOKUP function tables at power-on (fixed tables, the same for every program, like a ROM of multiplication facts), loads initial data memory, and drives the LCD from the bytes the CPU writes to the LCD port. It never computes anything that depends on the running program: no drawing operations, no arithmetic on program data. The silkscreen says so.
 * Part and chip counts include every chip on the board, including decoding and support.
 
 ## Assembly (decided, pending user confirmation)
