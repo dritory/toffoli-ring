@@ -57,7 +57,7 @@ Rules, one each:
 * **Flags:** Z after every calculation; C after ADD, SUB, SHL, SHR. LOAD, STORE, PUSH, POP and jumps never change flags.
 * **LOOKUP** returns one byte into A from a two-input function table selected by a field: MUL-low, MUL-high, DIV (quotient), MOD (remainder). Inputs are A and the operand. Single-input tables (sine, reciprocal) are ordinary data in memory, read with `[X]`. The CPU fills the function tables itself at start-up.
 * **Two stacks:** PUSH and POP use the data stack in data memory (one byte each). CALL, RET and interrupts use a separate 16-bit-wide return stack, so a call still finishes in one clock. Neither stack can overwrite the other.
-* **Interrupts:** entry pushes PC and the flags on the return stack and jumps to the vector; RET with its restore bit (alias RETI) pops both. The handler saves registers it uses with PUSH and POP. Interrupt enable is a device register.
+* **Interrupts:** entry pushes PC and the flags on the return stack and jumps to the vector; RET with its restore bit (alias RETI) pops both and switches interrupts back on. Entry switches them off, so handlers never nest. The handler saves registers it uses with PUSH and POP. Which buttons may interrupt is a device register.
 
 ### Aliases (assembler nicknames, one word each)
 
@@ -84,6 +84,15 @@ Stopping rule for any change to the opcode list (all three must hold): it cuts c
 * Return addresses moved to their own stack. A 16-bit return address cannot be written to 8-bit data memory in one clock, and separating the stacks removes stack-collision bugs.
 * SP became 8 bits with the stack in a fixed page: 256 bytes is plenty, and it saves two counter chips.
 * One carry rule for adds and shifts, and a fixed list of which instructions set which flags.
+
+## Decisions after the emulator run
+
+* Function tables: filled by the ESP32 at power-on. The CPU has no table write path.
+* Initial data memory (fonts, maps, text): written by the loader, like a cartridge.
+* LCD: driven by the ESP32 as a display bridge (it receives the bytes the CPU writes to the LCD port and only forwards them). It must keep up with the CPU's write rate (e.g. ESP32-S3 parallel capture, or a FIFO); otherwise a real LCD controller on the bus is the fallback.
+* Whole X (register code 4) is only valid for `LOAD X, #addr`; the assembler rejects it elsewhere.
+* Divide by zero: quotient 255, remainder A.
+* Interrupts: entry turns a master switch off (with its own LED); RETI turns it back on; reading the cause register clears it. No nesting. Implemented in both emulators.
 
 ## Memory (decided)
 

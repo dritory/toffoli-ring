@@ -88,7 +88,7 @@ class CPU:
         self.sp = SP_RESET; self.rsp = RSP_RESET; self.z = 0; self.cf = 0
         self.rstack = [0] * 256
         self.cycle = 0
-        self.btn = 0; self.pend = 0; self.en = 0; self.cause = 0
+        self.btn = 0; self.pend = 0; self.en = 0; self.cause = 0; self.ie = 1  # ie: master interrupt switch, off during a handler
         self.tick = 0; self.next_tick = self.tick_cycles
         self.rng = 0xACE1; self.led = 0
         self.sdepth = 0; self.rdepth = 0
@@ -197,9 +197,9 @@ class CPU:
         if self.cycle >= self.next_tick:
             self.tick = 1; self.next_tick += self.tick_cycles
         self.cycle += 1
-        if self.pend & self.en:
+        if self.ie and (self.pend & self.en):
             self.cause = self.pend & self.en; self.pend &= ~self.cause
-            self.rpush(self.pc); self.pc = IRQ_VECTOR
+            self.rpush(self.pc); self.pc = IRQ_VECTOR; self.ie = 0
             return
         pc = self.pc
         op, R, S, K, G, Y, O, addr = self.dec[pc] if pc < len(self.dec) else self.empty
@@ -257,11 +257,11 @@ class CPU:
         else:  # RET
             if cond_true(S, self.z, self.cf):
                 e = self.rpop(); npc = e & 0xFFFF
-                if R: self.z = (e >> 16) & 1; self.cf = (e >> 17) & 1
+                if R: self.z = (e >> 16) & 1; self.cf = (e >> 17) & 1; self.ie = 1
         self.pc = npc
 
     def state(self):
-        return (self.pc, self.a, self.c, self.x, self.sp, self.rsp, self.z, self.cf)
+        return (self.pc, self.a, self.c, self.x, self.sp, self.rsp, self.z, self.cf, self.ie)
 
     def run(self, n, events=None, stop_on_halt=True):
         """Run n clocks. events: list of (cycle, button_mask) sorted by cycle."""

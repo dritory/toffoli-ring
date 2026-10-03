@@ -70,7 +70,7 @@ class CPU {
   reset() {
     this.pc = K.PC_RESET; this.a = 0; this.c = 0; this.x = 0; this.sp = K.SP_RESET; this.rsp = K.RSP_RESET;
     this.z = 0; this.cf = 0; this.rstack = new Array(256).fill(0); this.cycle = 0;
-    this.btn = 0; this.pend = 0; this.en = 0; this.cause = 0; this.tick = 0; this.nextTick = this.tickCycles;
+    this.btn = 0; this.pend = 0; this.en = 0; this.cause = 0; this.ie = 1; this.tick = 0; this.nextTick = this.tickCycles;
     this.rngs = 0xACE1; this.led = 0; this.wlog = null; this.halted = false;
   }
   fillTables() {
@@ -137,9 +137,9 @@ class CPU {
   step() {
     if (this.cycle >= this.nextTick) { this.tick = 1; this.nextTick += this.tickCycles; }
     this.cycle++;
-    if (this.pend & this.en) {
+    if (this.ie && (this.pend & this.en)) {
       this.cause = this.pend & this.en; this.pend &= ~this.cause;
-      this.rpush(this.pc); this.pc = K.IRQ_VECTOR; return;
+      this.rpush(this.pc); this.pc = K.IRQ_VECTOR; this.ie = 0; return;
     }
     const pc = this.pc;
     const w = pc < this.prog.length ? this.prog[pc] : 0;
@@ -181,7 +181,7 @@ class CPU {
     } else {
       if (condTrue(S, this.z, this.cf)) {
         const e = this.rpop(); npc = e & 0xFFFF;
-        if (R) { this.z = (e >> 16) & 1; this.cf = (e >> 17) & 1; }
+        if (R) { this.z = (e >> 16) & 1; this.cf = (e >> 17) & 1; this.ie = 1; }
       }
     }
     this.pc = npc;

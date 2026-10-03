@@ -13,7 +13,7 @@ cpu.wlog = [];
 for (let i = 0; i < spec.cycles; i++) {
   while (ei < ev.length && ev[ei][0] <= cpu.cycle) cpu.setButtons(ev[ei++][1]);
   cpu.step();
-  mix(cpu.pc); mix(cpu.a); mix(cpu.c); mix(cpu.x); mix(cpu.sp); mix(cpu.rsp); mix(cpu.z); mix(cpu.cf);
+  mix(cpu.pc); mix(cpu.a); mix(cpu.c); mix(cpu.x); mix(cpu.sp); mix(cpu.rsp); mix(cpu.z); mix(cpu.cf); mix(cpu.ie);
   for (const [a, v] of cpu.wlog) { mix(a); mix(v); }
   if (from !== undefined && cpu.cycle > from && cpu.cycle <= to)
     out.push([cpu.cycle, cpu.pc, cpu.a, cpu.c, cpu.x, cpu.sp, cpu.rsp, cpu.z, cpu.cf, cpu.wlog.map(w => w.join(':')).join(',')].join(' '));
