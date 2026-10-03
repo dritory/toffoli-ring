@@ -1,0 +1,17 @@
+; counter: 10 words, 1 data bytes
+; word | opcode|restore+select|keep+reg|carry+source|address | source
+                           ; Counter on the LED port: +1 on every 60 Hz tick.
+                           .data
+D 0200 00                   n:      .byte 0
+                           .code
+0000 C|4|0|0|0002  JUMP start
+0001 F|C|0|0|0000  RETI                    ; interrupt vector (unused)
+                           start:
+0002 8|0|0|1|FF03  wait:   LOAD A, [FRAME]
+0003 4|0|0|0|0001  TEST #1                 ; AND, flags only
+0004 C|1|0|0|0002  JUMP Z, wait
+0005 8|0|0|1|0200  LOAD A, [n]
+0006 0|0|8|0|0001  ADD #1
+0007 9|0|0|1|0200  STORE [n], A
+0008 9|0|0|1|FF20  STORE [LED], A
+0009 C|4|0|0|0002  JUMP wait

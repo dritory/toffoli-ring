@@ -1,0 +1,135 @@
+{
+ "init": {
+  "words": 41,
+  "cycles": 1123566
+ },
+ "counter": {
+  "words": 10,
+  "cycles_per_op": 8
+ },
+ "snake": {
+  "words": 222,
+  "data": 508,
+  "step_min": 1671,
+  "step_max": 1701,
+  "step_avg": 1677,
+  "patterns": {
+   "LOAD A,[addr]": 165,
+   "store_const (LOAD A,#k + STORE)": 162,
+   "pointer setup (LOAD XL/XH/X)": 108,
+   "store_const to a device port": 126,
+   "STORE to LCD data (bus writes)": 9360,
+   "shift runs of >= 3 SHL (candidates for MUL #2^n)": 36,
+   "  cycles in those runs": 144,
+   "DJNZ closing a 2-store pixel loop": 4608,
+   "read-modify-write memory (LOAD,op,STORE same address)": 18,
+   "  of which +1 / -1 (INC/DEC memory)": 18,
+   "LOAD then TEST #255 (LOAD sets no flags)": 1,
+   "instructions": 15121
+  }
+ },
+ "pong": {
+  "words": 245,
+  "data": 22,
+  "frame_min": 525,
+  "frame_max": 5476,
+  "frame_avg": 1897,
+  "patterns": {
+   "LOAD A,[addr]": 2709,
+   "read-modify-write memory (LOAD,op,STORE same address)": 300,
+   "pointer setup (LOAD XL/XH/X)": 200,
+   "store_const (LOAD A,#k + STORE)": 1400,
+   "store_const to a device port": 1000,
+   "STORE to LCD data (bus writes)": 27200,
+   "DJNZ closing a 2-store pixel loop": 12800,
+   "  of which +1 / -1 (INC/DEC memory)": 200,
+   "instructions": 52541
+  }
+ },
+ "life": {
+  "words": 178,
+  "data": 16430,
+  "frame_min": 51928,
+  "frame_max": 73089,
+  "frame_avg": 59027,
+  "patterns": {
+   "LOAD A,[addr]": 20720,
+   "store_const (LOAD A,#k + STORE)": 5546,
+   "pointer setup (LOAD XL/XH/X)": 43468,
+   "read-modify-write memory (LOAD,op,STORE same address)": 4928,
+   "  of which +1 / -1 (INC/DEC memory)": 4924,
+   "LOAD then TEST #255 (LOAD sets no flags)": 168,
+   "store_const to a device port": 840,
+   "STORE to LCD data (bus writes)": 22848,
+   "DJNZ closing a 2-store pixel loop": 10752,
+   "instructions": 237238
+  }
+ },
+ "scroll": {
+  "words": 239,
+  "data": 632,
+  "frame_min": 31988,
+  "frame_max": 32263,
+  "frame_avg": 32142,
+  "patterns": {
+   "LOAD A,[addr]": 11877,
+   "store_const (LOAD A,#k + STORE)": 369,
+   "store_const to a device port": 44,
+   "STORE to LCD data (bus writes)": 71712,
+   "pointer setup (LOAD XL/XH/X)": 10816,
+   "read-modify-write memory (LOAD,op,STORE same address)": 10568,
+   "  of which +1 / -1 (INC/DEC memory)": 1608,
+   "LOAD then TEST #255 (LOAD sets no flags)": 3,
+   "instructions": 129131
+  }
+ },
+ "raycast": {
+  "words": 495,
+  "data": 9242,
+  "frame_min": 73692,
+  "frame_max": 102773,
+  "frame_avg": 85901,
+  "patterns": {
+   "LOAD A,[addr]": 14898,
+   "pointer setup (LOAD XL/XH/X)": 10101,
+   "LOAD then TEST #255 (LOAD sets no flags)": 486,
+   "store_const (LOAD A,#k + STORE)": 516,
+   "store_const to a device port": 33,
+   "STORE to LCD data (bus writes)": 96024,
+   "read-modify-write memory (LOAD,op,STORE same address)": 2880,
+   "DJNZ closing a 2-store pixel loop": 48000,
+   "  of which +1 / -1 (INC/DEC memory)": 480,
+   "instructions": 222447
+  }
+ },
+ "bf": [
+  {
+   "name": "hello",
+   "opt": true,
+   "tape8": false,
+   "words": 160,
+   "cycles": 1406
+  },
+  {
+   "name": "hello",
+   "opt": true,
+   "tape8": true,
+   "words": 164,
+   "cycles": 1659
+  },
+  {
+   "name": "hello",
+   "opt": false,
+   "tape8": false,
+   "words": 305,
+   "cycles": 2518
+  },
+  {
+   "name": "hello",
+   "opt": false,
+   "tape8": true,
+   "words": 309,
+   "cycles": 2708
+  }
+ ]
+}

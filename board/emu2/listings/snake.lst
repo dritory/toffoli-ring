@@ -1,0 +1,259 @@
+; snake: 222 words, 508 data bytes
+; word | opcode|restore+select|keep+reg|carry+source|address | source
+                           ; Snake on the LCD: 16 x 15 board, 16 x 16 pixel cells (256 x 240 of the 320 x 240 screen).
+                           ; Buttons arrive by interrupt (cause -> [pend]); the game steps every STEP_TICKS 60 Hz ticks.
+                           ; Cell index = y*16+x (fits a byte).  Snake body is a 256-entry ring buffer of cell indices.
+                           ; LED port shows the score.
+                           ; LCD helpers (macros: each use expands to 2 words, STORE cannot take a constant source).
+                           STEP_TICKS = 8
+                           GREEN = 0x07E0
+                           RED   = 0xF800
+                           WHITE = 0xFFFF
+                           .data
+D 0200 00                   dir:    .byte 0                 ; 1 up 2 down 4 left 8 right
+D 0201 00                   pend:   .byte 0                 ; button presses since last move (set by the interrupt)
+D 0202 00                   head:   .byte 0                 ; cell index of the head
+D 0203 00                   nh:     .byte 0                 ; new head cell
+D 0204 00                   hptr:   .byte 0                 ; ring buffer index of the head
+D 0205 00                   tptr:   .byte 0                 ; ring buffer index of the tail
+D 0206 00                   score:  .byte 0
+D 0207 00                   tc:     .byte 0                 ; ticks until next step
+D 0208 00                   dc_idx: .byte 0
+D 0209 00                   amask:  .byte 0
+D 020A 00                   pf:     .byte 0
+D 020B 00                   over:   .byte 0
+                           .org 0x0300
+D 0300 00 00 00 00 00 00 .. body:   .space 256
+                           .org 0x0400
+D 0400 00 00 00 00 00 00 .. board:  .space 240              ; 0 empty, 1 snake, 2 food
+                           .code
+0000 C|4|0|0|0008  JUMP start
+0001 C|4|0|0|0002  JUMP irq                ; interrupt vector
+0002 A|0|0|0|0000  irq:    PUSH A
+0003 8|0|0|1|FF02  LOAD A, [IRQ_CAUSE]
+0004 5|0|8|1|0201  OR [pend]
+0005 9|0|0|1|0201  STORE [pend], A
+0006 B|0|0|0|0000  POP A
+0007 F|C|0|0|0000  RETI
+0008 8|0|0|0|0000  start:  LOAD A, #0
+0009 9|0|0|1|FF20  STORE [LED], A
+000A 8|0|0|0|0008  LOAD A, #8              ; moving right
+000B 9|0|0|1|0200  STORE [dir], A
+000C 8|0|0|0|0008  LOAD A, #STEP_TICKS
+000D 9|0|0|1|0207  STORE [tc], A
+                                   ; initial snake: cells 115,116,117 (row 7, x = 3..5)
+000E 8|0|0|0|0075  LOAD A, #117
+000F 9|0|0|1|0202  STORE [head], A
+0010 8|0|0|0|0002  LOAD A, #2
+0011 9|0|0|1|0204  STORE [hptr], A
+0012 8|0|3|0|0003  LOAD XH, #hi(body)
+0013 8|0|2|0|0000  LOAD XL, #0
+0014 8|0|0|0|0073  LOAD A, #115
+0015 9|0|0|3|0000  STORE [X+], A
+0016 8|0|0|0|0074  LOAD A, #116
+0017 9|0|0|3|0000  STORE [X+], A
+0018 8|0|0|0|0075  LOAD A, #117
+0019 9|0|0|3|0000  STORE [X+], A
+001A 8|0|3|0|0004  LOAD XH, #hi(board)
+001B 8|0|2|0|0073  LOAD XL, #115
+001C 8|0|0|0|0001  LOAD A, #1
+001D 9|0|0|3|0000  STORE [X+], A
+001E 9|0|0|3|0000  STORE [X+], A
+001F 9|0|0|3|0000  STORE [X+], A
+0020 8|0|4|0|07E0  LOAD X, #GREEN
+0021 8|0|0|0|0073  LOAD A, #115
+0022 E|4|0|0|00B4  CALL draw_cell
+0023 8|0|4|0|07E0  LOAD X, #GREEN
+0024 8|0|0|0|0074  LOAD A, #116
+0025 E|4|0|0|00B4  CALL draw_cell
+0026 8|0|4|0|07E0  LOAD X, #GREEN
+0027 8|0|0|0|0075  LOAD A, #117
+0028 E|4|0|0|00B4  CALL draw_cell
+0029 8|0|0|0|007A  LOAD A, #122            ; first food, fixed
+002A E|4|0|0|00AC  CALL put_food
+002B 8|0|0|0|000F  LOAD A, #15
+002C 9|0|0|1|FF01  STORE [IRQ_EN], A       ; all four buttons interrupt
+002D 8|0|0|1|FF03  frame:  LOAD A, [FRAME]
+002E 4|0|0|0|0001  TEST #1
+002F C|1|0|0|002D  JUMP Z, frame
+0030 8|0|0|1|0207  LOAD A, [tc]
+0031 1|0|8|0|0001  SUB #1
+0032 9|0|0|1|0207  STORE [tc], A
+0033 C|5|0|0|002D  JUMP NZ, frame
+0034 8|0|0|0|0008  LOAD A, #STEP_TICKS
+0035 9|0|0|1|0207  STORE [tc], A
+                           step:                           ; one game step starts here
+                                   ; ---- take a turn request from the buttons ----
+0036 8|0|0|1|0200  LOAD A, [dir]
+0037 4|0|0|0|0003  TEST #3                 ; moving vertically? then only left/right are allowed
+0038 8|0|0|0|000C  LOAD A, #12
+0039 C|5|0|0|003B  JUMP NZ, am
+003A 8|0|0|0|0003  LOAD A, #3
+003B 9|0|0|1|0209  am:     STORE [amask], A
+003C 8|0|0|1|0201  LOAD A, [pend]
+003D 9|0|0|1|020A  STORE [pf], A
+003E 8|0|0|0|0000  LOAD A, #0
+003F 9|0|0|1|0201  STORE [pend], A         ; a press landing between these two lines is lost
+0040 8|0|0|1|020A  LOAD A, [pf]
+0041 4|0|8|1|0209  AND [amask]
+0042 C|1|0|0|0051  JUMP Z, move
+0043 9|0|0|1|020A  STORE [pf], A
+0044 4|0|0|0|0001  TEST #1
+0045 8|0|0|0|0001  LOAD A, #1
+0046 C|5|0|0|0050  JUMP NZ, setd
+0047 8|0|0|1|020A  LOAD A, [pf]
+0048 4|0|0|0|0002  TEST #2
+0049 8|0|0|0|0002  LOAD A, #2
+004A C|5|0|0|0050  JUMP NZ, setd
+004B 8|0|0|1|020A  LOAD A, [pf]
+004C 4|0|0|0|0004  TEST #4
+004D 8|0|0|0|0004  LOAD A, #4
+004E C|5|0|0|0050  JUMP NZ, setd
+004F 8|0|0|0|0008  LOAD A, #8
+0050 9|0|0|1|0200  setd:   STORE [dir], A
+                                   ; ---- compute the new head cell ----
+0051 8|0|0|1|0200  move:   LOAD A, [dir]
+0052 4|0|0|0|0001  TEST #1
+0053 C|5|0|0|005F  JUMP NZ, mv_up
+0054 4|0|0|0|0002  TEST #2
+0055 C|5|0|0|0063  JUMP NZ, mv_dn
+0056 4|0|0|0|0004  TEST #4
+0057 C|5|0|0|0068  JUMP NZ, mv_lf
+0058 8|0|0|1|0202  LOAD A, [head]          ; right
+0059 4|0|8|0|000F  AND #15
+005A 1|0|0|0|000F  CMP #15
+005B C|1|0|0|0095  JUMP Z, dead
+005C 8|0|0|1|0202  LOAD A, [head]
+005D 0|0|8|0|0001  ADD #1
+005E C|4|0|0|006D  JUMP moved
+005F 8|0|0|1|0202  mv_up:  LOAD A, [head]
+0060 1|0|8|0|0010  SUB #16
+0061 C|2|0|0|0095  JUMP C, dead
+0062 C|4|0|0|006D  JUMP moved
+0063 8|0|0|1|0202  mv_dn:  LOAD A, [head]
+0064 0|0|8|0|0010  ADD #16
+0065 1|0|0|0|00F0  CMP #240
+0066 C|6|0|0|0095  JUMP NC, dead
+0067 C|4|0|0|006D  JUMP moved
+0068 8|0|0|1|0202  mv_lf:  LOAD A, [head]
+0069 4|0|8|0|000F  AND #15
+006A C|1|0|0|0095  JUMP Z, dead
+006B 8|0|0|1|0202  LOAD A, [head]
+006C 1|0|8|0|0001  SUB #1
+006D 9|0|0|1|0203  moved:  STORE [nh], A
+006E 8|0|3|0|0004  LOAD XH, #hi(board)
+006F 8|0|2|4|0000  MOVE XL, A
+0070 8|0|0|2|0000  LOAD A, [X]
+0071 1|0|0|0|0001  CMP #1
+0072 C|1|0|0|0095  JUMP Z, dead
+0073 1|0|0|0|0002  CMP #2
+0074 C|1|0|0|0084  JUMP Z, eat
+                                   ; ---- plain move: free the tail ----
+0075 8|0|3|0|0003  LOAD XH, #hi(body)
+0076 8|0|2|1|0205  LOAD XL, [tptr]
+0077 8|0|0|2|0000  LOAD A, [X]             ; tail cell
+0078 8|0|2|4|0000  MOVE XL, A
+0079 8|0|3|0|0004  LOAD XH, #hi(board)
+007A 8|0|0|0|0000  LOAD A, #0
+007B 9|0|0|2|0000  STORE [X], A
+007C 8|0|0|6|0000  MOVE A, XL
+007D 8|0|4|0|0000  LOAD X, #0
+007E E|4|0|0|00B4  CALL draw_cell
+007F 8|0|0|1|0205  LOAD A, [tptr]
+0080 0|0|8|0|0001  ADD #1
+0081 9|0|0|1|0205  STORE [tptr], A
+0082 E|4|0|0|009D  CALL new_head
+0083 C|4|0|0|002D  JUMP frame
+0084 8|0|0|1|0206  eat:    LOAD A, [score]
+0085 0|0|8|0|0001  ADD #1
+0086 9|0|0|1|0206  STORE [score], A
+0087 9|0|0|1|FF20  STORE [LED], A
+0088 E|4|0|0|009D  CALL new_head
+0089 8|0|0|1|FF04  rf:     LOAD A, [RNG]           ; random free cell for the next food
+008A 1|0|0|0|00F0  CMP #240
+008B C|6|0|0|0089  JUMP NC, rf
+008C 9|0|0|1|0208  STORE [dc_idx], A
+008D 8|0|3|0|0004  LOAD XH, #hi(board)
+008E 8|0|2|4|0000  MOVE XL, A
+008F 8|0|0|2|0000  LOAD A, [X]
+0090 4|0|0|0|00FF  TEST #255
+0091 C|5|0|0|0089  JUMP NZ, rf
+0092 8|0|0|1|0208  LOAD A, [dc_idx]
+0093 E|4|0|0|00AC  CALL put_food
+0094 C|4|0|0|002D  JUMP frame
+0095 8|0|0|0|0000  dead:   LOAD A, #0
+0096 9|0|0|1|FF01  STORE [IRQ_EN], A
+0097 8|0|0|0|0001  LOAD A, #1
+0098 9|0|0|1|020B  STORE [over], A
+0099 8|0|4|0|FFFF  LOAD X, #WHITE
+009A 8|0|0|1|0202  LOAD A, [head]
+009B E|4|0|0|00B4  CALL draw_cell
+009C C|4|0|0|009C  JUMP $
+                           new_head:                       ; push [nh] as the new head and draw it
+009D 8|0|0|1|0204  LOAD A, [hptr]
+009E 0|0|8|0|0001  ADD #1
+009F 9|0|0|1|0204  STORE [hptr], A
+00A0 8|0|2|4|0000  MOVE XL, A
+00A1 8|0|3|0|0003  LOAD XH, #hi(body)
+00A2 8|0|0|1|0203  LOAD A, [nh]
+00A3 9|0|0|2|0000  STORE [X], A
+00A4 8|0|2|4|0000  MOVE XL, A
+00A5 8|0|3|0|0004  LOAD XH, #hi(board)
+00A6 8|0|0|0|0001  LOAD A, #1
+00A7 9|0|0|2|0000  STORE [X], A
+00A8 8|0|0|1|0203  LOAD A, [nh]
+00A9 9|0|0|1|0202  STORE [head], A
+00AA 8|0|4|0|07E0  LOAD X, #GREEN
+00AB C|4|0|0|00B4  JUMP draw_cell          ; tail call
+                           put_food:                       ; A = cell: mark food on the board and draw it
+00AC 9|0|0|1|0208  STORE [dc_idx], A
+00AD 8|0|3|0|0004  LOAD XH, #hi(board)
+00AE 8|0|2|4|0000  MOVE XL, A
+00AF 8|0|0|0|0002  LOAD A, #2
+00B0 9|0|0|2|0000  STORE [X], A
+00B1 8|0|0|1|0208  LOAD A, [dc_idx]
+00B2 8|0|4|0|F800  LOAD X, #RED
+00B3 C|4|0|0|00B4  JUMP draw_cell
+                           draw_cell:                      ; A = cell index, X = RGB565 colour; fills a 16x16 window
+00B4 9|0|0|1|0208  STORE [dc_idx], A
+00B5 8|0|0|0|002A  LOAD A, #0x2A   [macro LCDCMD]
+00B6 9|0|0|1|FF10  STORE [LCD_CMD], A   [macro LCDCMD]
+00B7 8|0|0|0|0000  LOAD A, #0   [macro LCDBYTE]
+00B8 9|0|0|1|FF11  STORE [LCD_DATA], A   [macro LCDBYTE]
+00B9 8|0|0|1|0208  LOAD A, [dc_idx]
+00BA 4|0|8|0|000F  AND #15
+00BB 2|0|8|0|0000  SHL
+00BC 2|0|8|0|0000  SHL
+00BD 2|0|8|0|0000  SHL
+00BE 2|0|8|0|0000  SHL
+00BF 9|0|0|1|FF11  STORE [LCD_DATA], A
+00C0 8|0|0|0|0000  LOAD A, #0   [macro LCDBYTE]
+00C1 9|0|0|1|FF11  STORE [LCD_DATA], A   [macro LCDBYTE]
+00C2 8|0|0|1|0208  LOAD A, [dc_idx]
+00C3 4|0|8|0|000F  AND #15
+00C4 2|0|8|0|0000  SHL
+00C5 2|0|8|0|0000  SHL
+00C6 2|0|8|0|0000  SHL
+00C7 2|0|8|0|0000  SHL
+00C8 0|0|8|0|000F  ADD #15
+00C9 9|0|0|1|FF11  STORE [LCD_DATA], A
+00CA 8|0|0|0|002B  LOAD A, #0x2B   [macro LCDCMD]
+00CB 9|0|0|1|FF10  STORE [LCD_CMD], A   [macro LCDCMD]
+00CC 8|0|0|0|0000  LOAD A, #0   [macro LCDBYTE]
+00CD 9|0|0|1|FF11  STORE [LCD_DATA], A   [macro LCDBYTE]
+00CE 8|0|0|1|0208  LOAD A, [dc_idx]
+00CF 4|0|8|0|00F0  AND #0xF0
+00D0 9|0|0|1|FF11  STORE [LCD_DATA], A
+00D1 8|0|0|0|0000  LOAD A, #0   [macro LCDBYTE]
+00D2 9|0|0|1|FF11  STORE [LCD_DATA], A   [macro LCDBYTE]
+00D3 8|0|0|1|0208  LOAD A, [dc_idx]
+00D4 4|0|8|0|00F0  AND #0xF0
+00D5 0|0|8|0|000F  ADD #15
+00D6 9|0|0|1|FF11  STORE [LCD_DATA], A
+00D7 8|0|0|0|002C  LOAD A, #0x2C   [macro LCDCMD]
+00D8 9|0|0|1|FF10  STORE [LCD_CMD], A   [macro LCDCMD]
+00D9 8|0|1|0|0000  LOAD C, #0              ; 256 pixels
+00DA 9|0|3|1|FF11  px:     STORE [LCD_DATA], XH
+00DB 9|0|2|1|FF11  STORE [LCD_DATA], XL
+00DC D|0|0|0|00DA  DJNZ px
+00DD F|4|0|0|0000  RET

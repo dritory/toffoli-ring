@@ -1,0 +1,303 @@
+; pong: 245 words, 22 data bytes
+; word | opcode|restore+select|keep+reg|carry+source|address | source
+                           ; Pong on the LCD: 40 x 30 field of 8 x 8 pixel cells.  Left paddle: UP / DOWN buttons (polled from BTN).
+                           ; Right paddle: simple AI (moves every second frame).  LED port: left score in the high nibble, right in the low.
+                           ; LOOKUP MUL/MULH #8 turn cell coordinates into pixel coordinates (needs the tables).
+                           ; LCD helpers (macros: each use expands to 2 words, STORE cannot take a constant source).
+                           PADH = 6
+                           PADL = 1                          ; left paddle column
+                           PADR = 38                         ; right paddle column
+                           WHITE = 0xFFFF
+                           YELLOW = 0xFFE0
+                           BLACK = 0
+                           .data
+D 0200 0C                   pl:     .byte 12                ; top row of the left paddle
+D 0201 0C                   pr:     .byte 12
+D 0202 14                   bx:     .byte 20
+D 0203 0F                   by:     .byte 15
+D 0204 01                   vx:     .byte 1                 ; +1 or 255 (-1)
+D 0205 01                   vy:     .byte 1
+D 0206 00                   nx:     .byte 0
+D 0207 00                   ny:     .byte 0
+D 0208 00                   sl:     .byte 0
+D 0209 00                   sr:     .byte 0
+D 020A 00                   par:    .byte 0
+D 020B 00                   t:      .byte 0
+D 020C 00                   rx:     .byte 0
+D 020D 00                   ry:     .byte 0
+D 020E 00                   rw:     .byte 0
+D 020F 00                   rh:     .byte 0
+D 0210 00                   cells:  .byte 0
+                           .code
+0000 C|4|0|0|0002  JUMP start
+0001 F|C|0|0|0000  RETI                    ; interrupt vector: unused here
+0002 E|4|0|0|00CE  start:  CALL init_tables
+0003 8|0|4|0|FFFF  LOAD X, #WHITE
+0004 E|4|0|0|008A  CALL pl_draw
+0005 E|4|0|0|0091  CALL pr_draw
+0006 8|0|4|0|FFE0  LOAD X, #YELLOW
+0007 E|4|0|0|0093  CALL draw_ball
+0008 8|0|0|1|FF03  frame:  LOAD A, [FRAME]
+0009 4|0|0|0|0001  TEST #1
+000A C|1|0|0|0008  JUMP Z, frame
+                           update:
+                                   ; ---- player ----
+000B 8|0|0|1|FF00  LOAD A, [BTN]
+000C 4|0|0|0|0001  TEST #1
+000D C|5|0|0|0011  JUMP NZ, p_up
+000E 4|0|0|0|0002  TEST #2
+000F C|5|0|0|0018  JUMP NZ, p_dn
+0010 C|4|0|0|0020  JUMP ai
+0011 8|0|0|1|0200  p_up:   LOAD A, [pl]
+0012 4|0|0|0|00FF  TEST #255
+0013 C|1|0|0|0020  JUMP Z, ai
+0014 E|4|0|0|0085  CALL pl_erase
+0015 8|0|0|1|0200  LOAD A, [pl]
+0016 1|0|8|0|0001  SUB #1
+0017 C|4|0|0|001E  JUMP p_set
+0018 8|0|0|1|0200  p_dn:   LOAD A, [pl]
+0019 1|0|0|0|0018  CMP #(30 - PADH)
+001A C|6|0|0|0020  JUMP NC, ai
+001B E|4|0|0|0085  CALL pl_erase
+001C 8|0|0|1|0200  LOAD A, [pl]
+001D 0|0|8|0|0001  ADD #1
+001E 9|0|0|1|0200  p_set:  STORE [pl], A
+001F E|4|0|0|008A  CALL pl_draw
+                                   ; ---- right paddle AI, every second frame ----
+0020 8|0|0|1|020A  ai:     LOAD A, [par]
+0021 6|0|8|0|0001  XOR #1
+0022 9|0|0|1|020A  STORE [par], A
+0023 C|1|0|0|003F  JUMP Z, ball
+0024 8|0|0|1|0201  LOAD A, [pr]
+0025 0|0|8|0|0002  ADD #2
+0026 9|0|0|1|020B  STORE [t], A
+0027 8|0|0|1|0203  LOAD A, [by]
+0028 1|0|0|1|020B  CMP [t]
+0029 C|2|0|0|0037  JUMP C, ai_up           ; ball above the paddle centre
+002A 8|0|0|1|020B  LOAD A, [t]
+002B 0|0|8|0|0001  ADD #1
+002C 9|0|0|1|020B  STORE [t], A
+002D 8|0|0|1|0203  LOAD A, [by]
+002E 1|0|0|1|020B  CMP [t]
+002F C|3|0|0|003F  JUMP LE, ball           ; ball level with the centre
+0030 8|0|0|1|0201  LOAD A, [pr]
+0031 1|0|0|0|0018  CMP #(30 - PADH)
+0032 C|6|0|0|003F  JUMP NC, ball
+0033 E|4|0|0|008C  CALL pr_erase
+0034 8|0|0|1|0201  LOAD A, [pr]
+0035 0|0|8|0|0001  ADD #1
+0036 C|4|0|0|003D  JUMP ai_set
+0037 8|0|0|1|0201  ai_up:  LOAD A, [pr]
+0038 4|0|0|0|00FF  TEST #255
+0039 C|1|0|0|003F  JUMP Z, ball
+003A E|4|0|0|008C  CALL pr_erase
+003B 8|0|0|1|0201  LOAD A, [pr]
+003C 1|0|8|0|0001  SUB #1
+003D 9|0|0|1|0201  ai_set: STORE [pr], A
+003E E|4|0|0|0091  CALL pr_draw
+                                   ; ---- ball ----
+003F 8|0|4|0|0000  ball:   LOAD X, #BLACK
+0040 E|4|0|0|0093  CALL draw_ball
+0041 8|0|0|1|0203  LOAD A, [by]
+0042 0|0|8|1|0205  ADD [vy]
+0043 1|0|0|0|001E  CMP #30                 ; unsigned: also catches -1
+0044 C|2|0|0|004A  JUMP C, vok
+0045 8|0|0|0|0000  LOAD A, #0
+0046 1|0|8|1|0205  SUB [vy]
+0047 9|0|0|1|0205  STORE [vy], A           ; bounce off top / bottom
+0048 8|0|0|1|0203  LOAD A, [by]
+0049 0|0|8|1|0205  ADD [vy]
+004A 9|0|0|1|0207  vok:    STORE [ny], A
+004B 8|0|0|1|0202  LOAD A, [bx]
+004C 0|0|8|1|0204  ADD [vx]
+004D 9|0|0|1|0206  STORE [nx], A
+004E 1|0|0|0|0001  CMP #PADL
+004F C|1|0|0|0053  JUMP Z, hit_l
+0050 1|0|0|0|0026  CMP #PADR
+0051 C|1|0|0|0058  JUMP Z, hit_r
+0052 C|4|0|0|0062  JUMP bmove
+0053 8|0|0|1|0207  hit_l:  LOAD A, [ny]
+0054 1|0|8|1|0200  SUB [pl]
+0055 1|0|0|0|0006  CMP #PADH               ; carry: 0 <= ny - pl < PADH
+0056 C|6|0|0|0069  JUMP NC, miss_l
+0057 C|4|0|0|005C  JUMP bounce
+0058 8|0|0|1|0207  hit_r:  LOAD A, [ny]
+0059 1|0|8|1|0201  SUB [pr]
+005A 1|0|0|0|0006  CMP #PADH
+005B C|6|0|0|006E  JUMP NC, miss_r
+005C 8|0|0|0|0000  bounce: LOAD A, #0
+005D 1|0|8|1|0204  SUB [vx]
+005E 9|0|0|1|0204  STORE [vx], A
+005F 8|0|0|1|0202  LOAD A, [bx]
+0060 0|0|8|1|0204  ADD [vx]
+0061 9|0|0|1|0206  STORE [nx], A
+0062 8|0|0|1|0206  bmove:  LOAD A, [nx]
+0063 9|0|0|1|0202  STORE [bx], A
+0064 8|0|0|1|0207  LOAD A, [ny]
+0065 9|0|0|1|0203  STORE [by], A
+0066 8|0|4|0|FFE0  bdraw:  LOAD X, #YELLOW
+0067 E|4|0|0|0093  CALL draw_ball
+0068 C|4|0|0|0008  JUMP frame
+0069 8|0|0|1|0209  miss_l: LOAD A, [sr]
+006A 0|0|8|0|0001  ADD #1
+006B 9|0|0|1|0209  STORE [sr], A
+006C 8|0|0|0|00FF  LOAD A, #255            ; serve towards the left player
+006D C|4|0|0|0072  JUMP serve
+006E 8|0|0|1|0208  miss_r: LOAD A, [sl]
+006F 0|0|8|0|0001  ADD #1
+0070 9|0|0|1|0208  STORE [sl], A
+0071 8|0|0|0|0001  LOAD A, #1
+0072 9|0|0|1|0204  serve:  STORE [vx], A
+0073 8|0|0|0|0014  LOAD A, #20
+0074 9|0|0|1|0202  STORE [bx], A
+0075 8|0|0|0|000F  LOAD A, #15
+0076 9|0|0|1|0203  STORE [by], A
+0077 8|0|0|1|FF04  LOAD A, [RNG]
+0078 4|0|0|0|0001  TEST #1
+0079 8|0|0|0|0001  LOAD A, #1
+007A C|5|0|0|007C  JUMP NZ, sv
+007B 8|0|0|0|00FF  LOAD A, #255
+007C 9|0|0|1|0205  sv:     STORE [vy], A
+007D 8|0|0|1|0208  LOAD A, [sl]
+007E 2|0|8|0|0000  SHL
+007F 2|0|8|0|0000  SHL
+0080 2|0|8|0|0000  SHL
+0081 2|0|8|0|0000  SHL
+0082 5|0|8|1|0209  OR [sr]
+0083 9|0|0|1|FF20  STORE [LED], A
+0084 C|4|0|0|0066  JUMP bdraw
+                           ; ---- drawing ----
+                           pl_erase:
+0085 8|0|4|0|0000  LOAD X, #BLACK
+                           pl_draw_x:
+0086 8|0|0|1|0200  LOAD A, [pl]
+0087 9|0|0|1|020D  STORE [ry], A
+0088 8|0|0|0|0001  LOAD A, #PADL
+0089 C|4|0|0|009A  JUMP draw_pad
+                           pl_draw:
+008A 8|0|4|0|FFFF  LOAD X, #WHITE
+008B C|4|0|0|0086  JUMP pl_draw_x
+                           pr_erase:
+008C 8|0|4|0|0000  LOAD X, #BLACK
+                           pr_draw_x:
+008D 8|0|0|1|0201  LOAD A, [pr]
+008E 9|0|0|1|020D  STORE [ry], A
+008F 8|0|0|0|0026  LOAD A, #PADR
+0090 C|4|0|0|009A  JUMP draw_pad
+                           pr_draw:
+0091 8|0|4|0|FFFF  LOAD X, #WHITE
+0092 C|4|0|0|008D  JUMP pr_draw_x
+                           draw_ball:                      ; X = colour; ball cell ([bx],[by])
+0093 8|0|0|1|0203  LOAD A, [by]
+0094 9|0|0|1|020D  STORE [ry], A
+0095 8|0|0|1|0202  LOAD A, [bx]
+0096 9|0|0|1|020C  STORE [rx], A
+0097 8|0|0|0|0001  LOAD A, #1
+0098 9|0|0|1|020F  STORE [rh], A
+0099 C|4|0|0|009D  JUMP draw_rect1
+                           draw_pad:                       ; A = column, [ry] = top row, X = colour
+009A 9|0|0|1|020C  STORE [rx], A
+009B 8|0|0|0|0006  LOAD A, #PADH
+009C 9|0|0|1|020F  STORE [rh], A
+                           draw_rect1:
+009D 8|0|0|0|0001  LOAD A, #1
+009E 9|0|0|1|020E  STORE [rw], A
+                           draw_rect:                      ; rect in cells ([rx],[ry],[rw],[rh]), X = RGB565 colour
+009F 8|0|0|0|002A  LOAD A, #0x2A   [macro LCDCMD]
+00A0 9|0|0|1|FF10  STORE [LCD_CMD], A   [macro LCDCMD]
+00A1 8|0|0|1|020C  LOAD A, [rx]
+00A2 7|1|8|0|0008  MULH #8
+00A3 9|0|0|1|FF11  STORE [LCD_DATA], A
+00A4 8|0|0|1|020C  LOAD A, [rx]
+00A5 7|0|8|0|0008  MUL #8
+00A6 9|0|0|1|FF11  STORE [LCD_DATA], A
+00A7 8|0|0|1|020C  LOAD A, [rx]
+00A8 0|0|8|1|020E  ADD [rw]
+00A9 1|0|8|0|0001  SUB #1
+00AA 9|0|0|1|020B  STORE [t], A
+00AB 7|1|8|0|0008  MULH #8
+00AC 9|0|0|1|FF11  STORE [LCD_DATA], A
+00AD 8|0|0|1|020B  LOAD A, [t]
+00AE 7|0|8|0|0008  MUL #8
+00AF 0|0|8|0|0007  ADD #7
+00B0 9|0|0|1|FF11  STORE [LCD_DATA], A
+00B1 8|0|0|0|002B  LOAD A, #0x2B   [macro LCDCMD]
+00B2 9|0|0|1|FF10  STORE [LCD_CMD], A   [macro LCDCMD]
+00B3 8|0|0|0|0000  LOAD A, #0   [macro LCDBYTE]
+00B4 9|0|0|1|FF11  STORE [LCD_DATA], A   [macro LCDBYTE]
+00B5 8|0|0|1|020D  LOAD A, [ry]
+00B6 7|0|8|0|0008  MUL #8
+00B7 9|0|0|1|FF11  STORE [LCD_DATA], A
+00B8 8|0|0|0|0000  LOAD A, #0   [macro LCDBYTE]
+00B9 9|0|0|1|FF11  STORE [LCD_DATA], A   [macro LCDBYTE]
+00BA 8|0|0|1|020D  LOAD A, [ry]
+00BB 0|0|8|1|020F  ADD [rh]
+00BC 1|0|8|0|0001  SUB #1
+00BD 7|0|8|0|0008  MUL #8
+00BE 0|0|8|0|0007  ADD #7
+00BF 9|0|0|1|FF11  STORE [LCD_DATA], A
+00C0 8|0|0|0|002C  LOAD A, #0x2C   [macro LCDCMD]
+00C1 9|0|0|1|FF10  STORE [LCD_CMD], A   [macro LCDCMD]
+00C2 8|0|0|1|020E  LOAD A, [rw]
+00C3 7|0|8|1|020F  MUL [rh]
+00C4 9|0|0|1|0210  STORE [cells], A
+00C5 8|0|1|0|0040  cell:   LOAD C, #64
+00C6 9|0|3|1|FF11  px:     STORE [LCD_DATA], XH
+00C7 9|0|2|1|FF11  STORE [LCD_DATA], XL
+00C8 D|0|0|0|00C6  DJNZ px
+00C9 8|0|0|1|0210  LOAD A, [cells]
+00CA 1|0|8|0|0001  SUB #1
+00CB 9|0|0|1|0210  STORE [cells], A
+00CC C|5|0|0|00C5  JUMP NZ, cell
+00CD F|4|0|0|0000  RET
+                           ; Start-up routine: the CPU fills the four LOOKUP tables through the write ports TBL0..TBL3.
+                           ; Table address = operand<<8 | A, so one pass over b (outer) and a (inner) writes every table
+                           ; in order; each port auto-increments and wraps to 0 after 65536 writes.
+                           ; Call once with interrupts off.  Destroys A, C.  Costs about 17 cycles per entry (1.1 M clocks).
+                           .data
+D 0211 00                   _t_b:   .byte 0
+D 0212 00                   _t_lo:  .byte 0
+D 0213 00                   _t_hi:  .byte 0
+D 0214 00                   _t_q:   .byte 0
+D 0215 00                   _t_r:   .byte 0
+                           .code
+                           init_tables:
+00CE 8|0|0|0|0000  LOAD A, #0
+00CF 9|0|0|1|0211  STORE [_t_b], A
+00D0 8|0|0|0|0000  _t_row: LOAD A, #0
+00D1 9|0|0|1|0212  STORE [_t_lo], A
+00D2 9|0|0|1|0213  STORE [_t_hi], A
+00D3 9|0|0|1|0215  STORE [_t_r], A
+00D4 8|0|0|1|0211  LOAD A, [_t_b]
+00D5 1|0|0|0|0000  CMP #0                  ; divide by zero row: quotient 255, remainder = A
+00D6 8|0|0|0|0000  LOAD A, #0
+00D7 C|5|0|0|00D9  JUMP NZ, _t_q0
+00D8 8|0|0|0|00FF  LOAD A, #255
+00D9 9|0|0|1|0214  _t_q0:  STORE [_t_q], A
+00DA 8|0|1|0|0000  LOAD C, #0              ; DJNZ from 0 counts 256 entries
+00DB 8|0|0|1|0212  _t_in:  LOAD A, [_t_lo]
+00DC 9|0|0|1|FF30  STORE [TBL0], A         ; MUL   = low byte of a*b
+00DD 0|0|8|1|0211  ADD [_t_b]              ; lo += b, carry out
+00DE 9|0|0|1|0212  STORE [_t_lo], A
+00DF 8|0|0|1|0213  LOAD A, [_t_hi]
+00E0 9|0|0|1|FF31  STORE [TBL1], A         ; MULH  = high byte
+00E1 0|0|8|8|0000  ADC #0                  ; hi += carry
+00E2 9|0|0|1|0213  STORE [_t_hi], A
+00E3 8|0|0|1|0214  LOAD A, [_t_q]
+00E4 9|0|0|1|FF32  STORE [TBL2], A         ; DIV
+00E5 8|0|0|1|0215  LOAD A, [_t_r]
+00E6 9|0|0|1|FF33  STORE [TBL3], A         ; MOD
+00E7 0|0|8|0|0001  ADD #1                  ; r + 1
+00E8 1|0|0|1|0211  CMP [_t_b]              ; reached b? then r = 0 and q + 1
+00E9 C|5|0|0|00EE  JUMP NZ, _t_nr
+00EA 8|0|0|1|0214  LOAD A, [_t_q]
+00EB 0|0|8|0|0001  ADD #1
+00EC 9|0|0|1|0214  STORE [_t_q], A
+00ED 8|0|0|0|0000  LOAD A, #0
+00EE 9|0|0|1|0215  _t_nr:  STORE [_t_r], A
+00EF D|0|0|0|00DB  DJNZ _t_in
+00F0 8|0|0|1|0211  LOAD A, [_t_b]
+00F1 0|0|8|0|0001  ADD #1
+00F2 9|0|0|1|0211  STORE [_t_b], A
+00F3 C|5|0|0|00D0  JUMP NZ, _t_row
+00F4 F|4|0|0|0000  RET

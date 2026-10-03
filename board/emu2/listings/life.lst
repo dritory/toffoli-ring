@@ -1,0 +1,226 @@
+; life: 178 words, 16430 data bytes
+; word | opcode|restore+select|keep+reg|carry+source|address | source
+                           ; Conway's Game of Life on a 40 x 30 field (dead border), 8 x 8 pixel cells on the LCD.
+                           ; One byte per cell; row y of a buffer is page (base + y), the column is the low address byte,
+                           ; so a 3-cell row sum is LOAD A,[X+] / ADD [X+] / ADD [X+].  Two buffers: pages 0x20..0x3F and 0x40..0x5F.
+                           ; Only cells that change are redrawn.  LED port: generation counter.
+                           ; LCD helpers (macros: each use expands to 2 words, STORE cannot take a constant source).
+                           WHITE = 0xFFFF
+                           .data
+D 0200 00                   cx:     .byte 0
+D 0201 00                   cy:     .byte 0
+D 0202 00                   sq:     .byte 0
+D 0203 20                   cur:    .byte 0x20              ; base page of the current buffer
+D 0204 00                   y:      .byte 0
+D 0205 00                   xm1:    .byte 0                 ; column - 1 (cells are columns 1..40)
+D 0206 00                   ra:     .byte 0                 ; pages of rows y-1, y, y+1
+D 0207 00                   rb:     .byte 0
+D 0208 00                   rc:     .byte 0
+D 0209 00                   s:      .byte 0
+D 020A 00                   old:    .byte 0
+D 020B 00                   new:    .byte 0
+D 020C 00                   gen:    .byte 0
+D 020D 00                   t:      .byte 0
+                           .org 0x0300
+                           ; initial live cells as (column, row) pairs, column 0 ends the list
+D 0300 03 02 04 03 02 04 .. seed:   .byte 3,2, 4,3, 2,4, 3,4, 4,4                  ; glider
+D 030A 15 0F 16 0F 14 10 ..         .byte 21,15, 22,15, 20,16, 21,16, 21,17        ; R-pentomino
+D 0314 21 05 22 05 23 05            .byte 33,5, 34,5, 35,5                         ; blinker
+D 031A 00                           .byte 0
+                           .org 0x2000
+D 2000 00 00 00 00 00 00 .. buf0:   .space 0x2000
+                           .org 0x4000
+D 4000 00 00 00 00 00 00 .. buf1:   .space 0x2000
+                           .code
+0000 C|4|0|0|0002  JUMP start
+0001 F|C|0|0|0000  RETI
+0002 E|4|0|0|008B  start:  CALL init_tables
+0003 8|0|3|0|0003  sd:     LOAD XH, #hi(seed)
+0004 8|0|2|1|0202  LOAD XL, [sq]
+0005 8|0|0|3|0000  LOAD A, [X+]
+0006 9|0|0|1|0200  STORE [cx], A
+0007 4|0|0|0|00FF  TEST #255
+0008 C|1|0|0|0019  JUMP Z, run
+0009 8|0|0|3|0000  LOAD A, [X+]
+000A 9|0|0|1|0201  STORE [cy], A
+000B 9|0|2|1|0202  STORE [sq], XL
+000C 0|0|8|0|0020  ADD #0x20               ; page of row cy in buffer 0
+000D 8|0|3|4|0000  MOVE XH, A
+000E 8|0|2|1|0200  LOAD XL, [cx]
+000F 8|0|0|0|0001  LOAD A, #1
+0010 9|0|0|2|0000  STORE [X], A
+0011 8|0|0|1|0200  LOAD A, [cx]
+0012 1|0|8|0|0001  SUB #1
+0013 9|0|0|1|0205  STORE [xm1], A
+0014 8|0|0|1|0201  LOAD A, [cy]
+0015 9|0|0|1|0204  STORE [y], A
+0016 8|0|4|0|FFFF  LOAD X, #WHITE
+0017 E|4|0|0|0067  CALL draw_cell
+0018 C|4|0|0|0003  JUMP sd
+                           run:
+0019 8|0|0|1|FF03  frame:  LOAD A, [FRAME]
+001A 4|0|0|0|0001  TEST #1
+001B C|1|0|0|0019  JUMP Z, frame
+001C 8|0|0|0|0001  LOAD A, #1
+001D 9|0|0|1|0204  STORE [y], A
+001E 8|0|0|1|0203  row:    LOAD A, [cur]
+001F 0|0|8|1|0204  ADD [y]
+0020 9|0|0|1|0207  STORE [rb], A
+0021 1|0|8|0|0001  SUB #1
+0022 9|0|0|1|0206  STORE [ra], A
+0023 0|0|8|0|0002  ADD #2
+0024 9|0|0|1|0208  STORE [rc], A
+0025 8|0|0|0|0000  LOAD A, #0
+0026 9|0|0|1|0205  STORE [xm1], A
+0027 8|0|3|1|0206  col:    LOAD XH, [ra]           ; 3 x 3 sum, centre included
+0028 8|0|2|1|0205  LOAD XL, [xm1]
+0029 8|0|0|3|0000  LOAD A, [X+]
+002A 0|0|8|3|0000  ADD [X+]
+002B 0|0|8|3|0000  ADD [X+]
+002C 8|0|3|1|0208  LOAD XH, [rc]
+002D 8|0|2|1|0205  LOAD XL, [xm1]
+002E 0|0|8|3|0000  ADD [X+]
+002F 0|0|8|3|0000  ADD [X+]
+0030 0|0|8|3|0000  ADD [X+]
+0031 8|0|3|1|0207  LOAD XH, [rb]
+0032 8|0|2|1|0205  LOAD XL, [xm1]
+0033 0|0|8|3|0000  ADD [X+]
+0034 0|0|8|3|0000  ADD [X+]
+0035 0|0|8|3|0000  ADD [X+]
+0036 9|0|0|1|0209  STORE [s], A
+0037 8|0|2|1|0205  LOAD XL, [xm1]
+0038 8|0|0|3|0000  LOAD A, [X+]
+0039 8|0|0|2|0000  LOAD A, [X]             ; the cell itself
+003A 9|0|0|1|020A  STORE [old], A
+003B 8|0|0|1|0209  LOAD A, [s]
+003C 1|0|0|0|0003  CMP #3
+003D C|1|0|0|0042  JUMP Z, born
+003E 1|0|0|0|0004  CMP #4
+003F C|5|0|0|0044  JUMP NZ, die
+0040 8|0|0|1|020A  LOAD A, [old]           ; sum 4: keeps its state
+0041 C|4|0|0|0045  JUMP wr
+0042 8|0|0|0|0001  born:   LOAD A, #1
+0043 C|4|0|0|0045  JUMP wr
+0044 8|0|0|0|0000  die:    LOAD A, #0
+0045 9|0|0|1|020B  wr:     STORE [new], A
+0046 8|0|0|1|0207  LOAD A, [rb]
+0047 6|0|8|0|0060  XOR #0x60               ; same row in the other buffer
+0048 8|0|3|4|0000  MOVE XH, A
+0049 8|0|2|1|0205  LOAD XL, [xm1]
+004A 8|0|0|3|0000  LOAD A, [X+]
+004B 8|0|0|1|020B  LOAD A, [new]
+004C 9|0|0|2|0000  STORE [X], A
+004D 6|0|8|1|020A  XOR [old]
+004E C|1|0|0|0055  JUMP Z, same
+004F 8|0|0|1|020B  LOAD A, [new]
+0050 4|0|0|0|00FF  TEST #255
+0051 8|0|4|0|FFFF  LOAD X, #WHITE
+0052 C|5|0|0|0054  JUMP NZ, dr
+0053 8|0|4|0|0000  LOAD X, #0
+0054 E|4|0|0|0067  dr:     CALL draw_cell
+0055 8|0|0|1|0205  same:   LOAD A, [xm1]
+0056 0|0|8|0|0001  ADD #1
+0057 9|0|0|1|0205  STORE [xm1], A
+0058 1|0|0|0|0028  CMP #40
+0059 C|5|0|0|0027  JUMP NZ, col
+005A 8|0|0|1|0204  LOAD A, [y]
+005B 0|0|8|0|0001  ADD #1
+005C 9|0|0|1|0204  STORE [y], A
+005D 1|0|0|0|001F  CMP #31
+005E C|5|0|0|001E  JUMP NZ, row
+005F 8|0|0|1|0203  LOAD A, [cur]
+0060 6|0|8|0|0060  XOR #0x60
+0061 9|0|0|1|0203  STORE [cur], A
+0062 8|0|0|1|020C  LOAD A, [gen]
+0063 0|0|8|0|0001  ADD #1
+0064 9|0|0|1|020C  STORE [gen], A
+0065 9|0|0|1|FF20  STORE [LED], A
+0066 C|4|0|0|0019  JUMP frame
+                           draw_cell:                      ; X = colour; cell column [xm1], row [y] - 1
+0067 8|0|0|0|002A  LOAD A, #0x2A   [macro LCDCMD]
+0068 9|0|0|1|FF10  STORE [LCD_CMD], A   [macro LCDCMD]
+0069 8|0|0|1|0205  LOAD A, [xm1]
+006A 7|1|8|0|0008  MULH #8
+006B 9|0|0|1|FF11  STORE [LCD_DATA], A
+006C 8|0|0|1|0205  LOAD A, [xm1]
+006D 7|0|8|0|0008  MUL #8
+006E 9|0|0|1|FF11  STORE [LCD_DATA], A
+006F 8|0|0|1|0205  LOAD A, [xm1]
+0070 7|1|8|0|0008  MULH #8
+0071 9|0|0|1|FF11  STORE [LCD_DATA], A
+0072 8|0|0|1|0205  LOAD A, [xm1]
+0073 7|0|8|0|0008  MUL #8
+0074 0|0|8|0|0007  ADD #7
+0075 9|0|0|1|FF11  STORE [LCD_DATA], A
+0076 8|0|0|0|002B  LOAD A, #0x2B   [macro LCDCMD]
+0077 9|0|0|1|FF10  STORE [LCD_CMD], A   [macro LCDCMD]
+0078 8|0|0|0|0000  LOAD A, #0   [macro LCDBYTE]
+0079 9|0|0|1|FF11  STORE [LCD_DATA], A   [macro LCDBYTE]
+007A 8|0|0|1|0204  LOAD A, [y]
+007B 1|0|8|0|0001  SUB #1
+007C 7|0|8|0|0008  MUL #8
+007D 9|0|0|1|020D  STORE [t], A
+007E 9|0|0|1|FF11  STORE [LCD_DATA], A
+007F 8|0|0|0|0000  LOAD A, #0   [macro LCDBYTE]
+0080 9|0|0|1|FF11  STORE [LCD_DATA], A   [macro LCDBYTE]
+0081 8|0|0|1|020D  LOAD A, [t]
+0082 0|0|8|0|0007  ADD #7
+0083 9|0|0|1|FF11  STORE [LCD_DATA], A
+0084 8|0|0|0|002C  LOAD A, #0x2C   [macro LCDCMD]
+0085 9|0|0|1|FF10  STORE [LCD_CMD], A   [macro LCDCMD]
+0086 8|0|1|0|0040  LOAD C, #64
+0087 9|0|3|1|FF11  px:     STORE [LCD_DATA], XH
+0088 9|0|2|1|FF11  STORE [LCD_DATA], XL
+0089 D|0|0|0|0087  DJNZ px
+008A F|4|0|0|0000  RET
+                           ; Start-up routine: the CPU fills the four LOOKUP tables through the write ports TBL0..TBL3.
+                           ; Table address = operand<<8 | A, so one pass over b (outer) and a (inner) writes every table
+                           ; in order; each port auto-increments and wraps to 0 after 65536 writes.
+                           ; Call once with interrupts off.  Destroys A, C.  Costs about 17 cycles per entry (1.1 M clocks).
+                           .data
+D 6000 00                   _t_b:   .byte 0
+D 6001 00                   _t_lo:  .byte 0
+D 6002 00                   _t_hi:  .byte 0
+D 6003 00                   _t_q:   .byte 0
+D 6004 00                   _t_r:   .byte 0
+                           .code
+                           init_tables:
+008B 8|0|0|0|0000  LOAD A, #0
+008C 9|0|0|1|6000  STORE [_t_b], A
+008D 8|0|0|0|0000  _t_row: LOAD A, #0
+008E 9|0|0|1|6001  STORE [_t_lo], A
+008F 9|0|0|1|6002  STORE [_t_hi], A
+0090 9|0|0|1|6004  STORE [_t_r], A
+0091 8|0|0|1|6000  LOAD A, [_t_b]
+0092 1|0|0|0|0000  CMP #0                  ; divide by zero row: quotient 255, remainder = A
+0093 8|0|0|0|0000  LOAD A, #0
+0094 C|5|0|0|0096  JUMP NZ, _t_q0
+0095 8|0|0|0|00FF  LOAD A, #255
+0096 9|0|0|1|6003  _t_q0:  STORE [_t_q], A
+0097 8|0|1|0|0000  LOAD C, #0              ; DJNZ from 0 counts 256 entries
+0098 8|0|0|1|6001  _t_in:  LOAD A, [_t_lo]
+0099 9|0|0|1|FF30  STORE [TBL0], A         ; MUL   = low byte of a*b
+009A 0|0|8|1|6000  ADD [_t_b]              ; lo += b, carry out
+009B 9|0|0|1|6001  STORE [_t_lo], A
+009C 8|0|0|1|6002  LOAD A, [_t_hi]
+009D 9|0|0|1|FF31  STORE [TBL1], A         ; MULH  = high byte
+009E 0|0|8|8|0000  ADC #0                  ; hi += carry
+009F 9|0|0|1|6002  STORE [_t_hi], A
+00A0 8|0|0|1|6003  LOAD A, [_t_q]
+00A1 9|0|0|1|FF32  STORE [TBL2], A         ; DIV
+00A2 8|0|0|1|6004  LOAD A, [_t_r]
+00A3 9|0|0|1|FF33  STORE [TBL3], A         ; MOD
+00A4 0|0|8|0|0001  ADD #1                  ; r + 1
+00A5 1|0|0|1|6000  CMP [_t_b]              ; reached b? then r = 0 and q + 1
+00A6 C|5|0|0|00AB  JUMP NZ, _t_nr
+00A7 8|0|0|1|6003  LOAD A, [_t_q]
+00A8 0|0|8|0|0001  ADD #1
+00A9 9|0|0|1|6003  STORE [_t_q], A
+00AA 8|0|0|0|0000  LOAD A, #0
+00AB 9|0|0|1|6004  _t_nr:  STORE [_t_r], A
+00AC D|0|0|0|0098  DJNZ _t_in
+00AD 8|0|0|1|6000  LOAD A, [_t_b]
+00AE 0|0|8|0|0001  ADD #1
+00AF 9|0|0|1|6000  STORE [_t_b], A
+00B0 C|5|0|0|008D  JUMP NZ, _t_row
+00B1 F|4|0|0|0000  RET
