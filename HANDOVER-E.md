@@ -15,6 +15,18 @@ Tests for every decision: does it make the machine easier to understand complete
 6. A kit finished in an evening: about 30–40 socketed chips to solder; SMD parts pre-assembled.
 Success check: a newcomer can single-step one frame of Snake and explain every instruction from the board alone.
 
+## Learning ladder and module structure (decided direction)
+
+Principle: digital systems are units composed into submodules composed into modules. The kit teaches in that order, and each step works on its own before the next.
+
+1. Foundations (discrete parts, small learning cards): a transistor as a switch with an LED; NOT and NAND from transistors; an SR latch from two NANDs; a D flip-flop; a 1-bit full adder. Each card has switches for inputs and LEDs for outputs.
+2. The bridge: "this 74HC00 holds four of the NAND gates you just built." Chips are introduced as packaged versions of the cards.
+3. CPU modules, built in order, each tested before the next: clock and program counter; program memory and instruction LEDs; register A and the ALU; flags and jumps; data memory and X; stacks and CALL; interrupts and buttons; LCD.
+4. Composition shown everywhere: each module outline on the silkscreen names its submodules (e.g. "8 full adders" in the ALU); the web twin zooms from CPU to module to gate to transistor.
+5. Instant feedback: a test mode in which the ESP32 drives a finished module's inputs and checks its outputs (testing only, never computing for programs), so every stage ends with "passed".
+
+Open: separate module boards on a backplane, or one A4 board populated zone by zone (with the foundation cards as break-away tabs on the same panel).
+
 ## Requirements
 
 * 8-bit data path. Logic chips allowed (74HC family). Discrete parts not required.
