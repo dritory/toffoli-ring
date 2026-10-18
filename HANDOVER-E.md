@@ -25,7 +25,11 @@ Principle: digital systems are units composed into submodules composed into modu
 4. Composition shown everywhere: each module outline on the silkscreen names its submodules (e.g. "8 full adders" in the ALU); the web twin zooms from CPU to module to gate to transistor.
 5. Instant feedback: a test mode in which the ESP32 drives a finished module's inputs and checks its outputs (testing only, never computing for programs), so every stage ends with "passed".
 
-Open: separate module boards on a backplane, or one A4 board populated zone by zone (with the foundation cards as break-away tabs on the same panel).
+Board structure (decided): one flat A4 board, multilayer (4 or 6 layers), populated zone by zone. No backplane, no tiles.
+* Each module is a zone with its own outline and name on the silkscreen.
+* A test hub (the ESP32 plus I/O expanders on the back) has a test line to every module's inputs and outputs through the inner layers, so each module can be tested on its own: the hub drives its inputs and reads its outputs. Testing only, never computing for programs.
+* Isolating a module for testing: wherever a module drives a shared bus through tri-state drivers, the hub switches those drivers off in test mode (electronic isolation, no extra parts). Lines without such drivers use solder bridges or DIP switches, closed when the zone passes; the DIP switches double as "break it on purpose" switches on control lines.
+* Open: how many lines the hub needs (estimate 80–120), the expander choice, and 4 versus 6 layers (decide after a routing trial).
 
 ## Requirements
 
