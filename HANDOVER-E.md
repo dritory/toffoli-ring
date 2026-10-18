@@ -2,6 +2,19 @@
 
 Separate from the minimal-computer research. Goal: an educational and art piece. An 8-bit computer on one A4 board where every register, bus and control line has LEDs, the silkscreen draws the block diagram, programs upload from a web page, and simple games run with button interrupts.
 
+## Goal (decided)
+
+**The smallest complete computer you can understand completely, and it plays real games.** Educational first.
+
+Tests for every decision: does it make the machine easier to understand completely, or more fun to use?
+1. One clock = one whole instruction: a single step runs one program line and the LEDs show everything it did.
+2. The machine documents itself: instruction set, bit layout and block diagram printed on the board.
+3. A digital twin: the web emulator matches the board cycle for cycle; the phone shows the current source line beside the LEDs.
+4. Real games on one A4 board: Snake, Pong, Life, a 3D maze on a colour LCD.
+5. Honest helpers: the board states that the ESP32 only loads, clocks, observes and forwards.
+6. A kit finished in an evening: about 30–40 socketed chips to solder; SMD parts pre-assembled.
+Success check: a newcomer can single-step one frame of Snake and explain every instruction from the board alone.
+
 ## Requirements
 
 * 8-bit data path. Logic chips allowed (74HC family). Discrete parts not required.
